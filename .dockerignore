@@ -18,3 +18,9 @@ yarn-error.log
 *.md
 .DS_Store
 *.log
+car-maintenance/.env
+car-maintenance/.env.*.local
+car-maintenance/.env.testing
+car-maintenance/.phpunit.result.cache
+car-maintenance/tests/
+.github/

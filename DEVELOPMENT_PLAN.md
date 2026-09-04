@@ -10,7 +10,7 @@
 | **AI** | OpenRouter API for oil brand & spec suggestions |
 | **Container** | Docker (PHP-FPM, Nginx, MySQL, Node, Redis) |
 
-**Progress:** ✓ Days 1–14 complete · ◐ Days 23, 24, 26, 29 partially complete · remaining days not started
+**Progress:** ✓ Days 1–29 complete · Day 30 not started
 
 > **Legend:** `✓` = complete · `◐` = partially complete · (no icon) = not started
 ---
@@ -409,7 +409,7 @@ docker-compose exec app php artisan tinker
 
 ---
 
-### Day 15 — Oil Change Tracker: Frontend
+### Day 15 — Oil Change Tracker: Frontend ✓
 
 **Goal:** Build oil change form and status display on car detail page.
 
@@ -430,7 +430,7 @@ docker-compose exec app php artisan tinker
 
 ---
 
-### Day 16 — Mileage Update Feature
+### Day 16 — Mileage Update Feature ✓
 
 **Goal:** Allow users to update current mileage quickly from car detail page.
 
@@ -456,7 +456,7 @@ php artisan make:controller CarMileageController
 
 ---
 
-### Day 17 — Email Notification System: Backend
+### Day 17 — Email Notification System: Backend ✓
 
 **Goal:** Build email notification system for oil change reminders.
 
@@ -489,7 +489,7 @@ docker-compose exec app php artisan oil-changes:check
 
 ---
 
-### Day 18 — Notification History + UI
+### Day 18 — Notification History + UI ✓
 
 **Goal:** Allow users to view and manage notification history.
 
@@ -516,7 +516,7 @@ Route::post('/notifications/{id}/read', [NotificationsController::class, 'markAs
 
 ---
 
-### Day 19 — OpenRouter Integration: Service Class
+### Day 19 — OpenRouter Integration: Service Class ✓
 
 **Goal:** Create service class for OpenRouter API communication.
 
@@ -550,7 +550,7 @@ docker-compose exec app php artisan tinker
 
 ---
 
-### Day 20 — Oil Suggestions: Backend
+### Day 20 — Oil Suggestions: Backend ✓
 
 **Goal:** Build controller that recommends oil brands/specs per vehicle and caches them forever (hash-based deduplication).
 
@@ -596,7 +596,7 @@ Route::post('cars/{car}/oil-suggestions/generate', [OilSuggestionsController::cl
 
 ---
 
-### Day 21 — Oil Suggestions: Frontend
+### Day 21 — Oil Suggestions: Frontend ✓
 
 **Goal:** Build React page to display oil brand and specification suggestions with loading states.
 
@@ -619,7 +619,7 @@ Route::post('cars/{car}/oil-suggestions/generate', [OilSuggestionsController::cl
 
 ---
 
-### Day 22 — Dashboard Enhancements
+### Day 22 — Dashboard Enhancements ✓
 
 **Goal:** Build a rich dashboard with stats and car status cards.
 
@@ -645,7 +645,7 @@ Route::post('cars/{car}/oil-suggestions/generate', [OilSuggestionsController::cl
 
 ---
 
-### Day 23 — Testing Setup & Feature Tests (Auth) ◐
+### Day 23 — Testing Setup & Feature Tests (Auth) ✓
 
 **Goal:** Write PHPUnit feature tests for authentication.
 
@@ -656,15 +656,15 @@ mkdir -p tests/Feature/Auth
 
 **Files to create:**
 - ✓ `tests/Feature/Auth/RegistrationTest.php`
-- `tests/Feature/Auth/LoginTest.php`
+- ✓ `tests/Feature/Auth/LoginTest.php`
 
 **Tests to write:**
 - `test_registration_screen_can_be_rendered()` — 200 + Inertia component check
 - ✓ `test_new_users_can_register()` — creates user, authenticated, redirected *(implemented as `test_new_users_can_register_and_land_on_dashboard`)*
 - ✓ `test_registration_requires_country()` — validation error *(implemented as `test_registration_requires_a_valid_country_code`)*
-- `test_login_screen_can_be_rendered()` — 200
-- `test_users_can_authenticate()` — login success
-- `test_users_can_not_authenticate_with_invalid_password()` — 401
+- ✓ `test_login_screen_can_be_rendered()` — 200
+- ✓ `test_users_can_authenticate()` — login success
+- ✓ `test_users_can_not_authenticate_with_invalid_password()` — 401
 
 **Testing:**
 ```bash
@@ -673,7 +673,7 @@ docker-compose exec app php artisan test tests/Feature/Auth/
 
 ---
 
-### Day 24 — Feature Tests (Cars & Oil Changes) ◐
+### Day 24 — Feature Tests (Cars & Oil Changes) ✓
 
 **Goal:** Write feature tests for car CRUD and oil change calculations.
 
@@ -692,17 +692,17 @@ docker-compose exec app php artisan test
 
 ---
 
-### Day 25 — Feature Tests (Suggestions & Notifications)
+### Day 25 — Feature Tests (Suggestions & Notifications) ✓
 
 **Goal:** Write tests for OpenRouter integration and notification command.
 
 **Files to create:**
-- `tests/Feature/OilSuggestionsTest.php`
-- `tests/Feature/NotificationCommandTest.php`
+- ✓ `tests/Feature/OilSuggestionsTest.php`
+- ✓ `tests/Feature/NotificationCommandTest.php`
 
 **Tests to write:**
-- Oil suggestions: mock OpenRouterService, verify cache hit (1 API call), verify a second car with the same spec reuses the cache, verify force regenerate is ignored
-- Notifications: assert notification sent when overdue, assert no duplicate same-day notifications
+- ✓ Oil suggestions: mock OpenRouterService, verify cache hit (1 API call), verify a second car with the same spec reuses the cache, verify force regenerate is ignored
+- ✓ Notifications: assert notification sent when overdue, assert no duplicate same-day notifications
 
 **Mocking example:**
 ```php
@@ -718,21 +718,23 @@ docker-compose exec app php artisan test
 
 ---
 
-### Day 26 — Docker Optimization & Production Config ◐
+### Day 26 — Docker Optimization & Production Config ✓
 
 **Goal:** Optimize Dockerfiles for production and add scheduler service.
 
 **Files to create/modify:**
-- ✓ `docker/app/Dockerfile` — multi-stage, opcache, production optimizations
-- ✓ `docker-compose.prod.yml`
-- ✓ `docker/web/nginx.conf` — production headers, gzip
+- ✓ `docker/app/Dockerfile` — multi-stage `dev`/`prod` targets, opcache, production optimizations
+- ✓ `docker-compose.yml` — pinned `app` service to `target: dev`
+- ✓ `docker-compose.prod.yml` — production target, health checks, corrected volume mounts
+- ✓ `docker/web/nginx.conf` — production headers, gzip, static caching, health endpoint
+- ✓ `.dockerignore` — tighter exclusions
 
 **Production features:**
-- ✓ PHP opcache enabled
-- Route/view/config caching
-- Composer autoloader optimization
+- ✓ PHP opcache enabled (production settings: no timestamp validation, 256 MB)
+- ✓ Route/view/config caching (`route:cache`, `view:cache`, `event:cache` baked in; `config:cache` at startup)
+- ✓ Composer autoloader optimization (`--optimize-autoloader --classmap-authoritative`)
 - ✓ Scheduler container (runs `php artisan schedule:work`)
-- Health checks
+- ✓ Health checks (`php-fpm -t` for app, `/healthz` for web)
 
 **Testing:**
 ```bash
@@ -742,7 +744,7 @@ docker-compose -f docker-compose.prod.yml ps
 
 ---
 
-### Day 27 — Code Quality & CI/CD
+### Day 27 — Code Quality & CI/CD ✓
 
 **Goal:** Add Laravel Pint, ESLint, and GitHub Actions workflow.
 
@@ -776,7 +778,7 @@ docker-compose exec node npx eslint resources/js --ext .js,.jsx
 
 ---
 
-### Day 28 — Final Frontend Polish
+### Day 28 — Final Frontend Polish ✓
 
 **Goal:** Loading states, empty states, error boundaries, responsive design.
 
@@ -802,7 +804,7 @@ docker-compose exec node npx eslint resources/js --ext .js,.jsx
 
 ---
 
-### Day 29 — Documentation & README ◐
+### Day 29 — Documentation & README ✓
 
 **Goal:** Write comprehensive documentation.
 
@@ -816,8 +818,8 @@ docker-compose exec node npx eslint resources/js --ext .js,.jsx
 3. ✓ Quick start (Docker)
 4. ✓ Environment variables reference
 5. ✓ Running tests
-6. OAuth setup (Google, Facebook)
-7. OpenRouter setup
+6. ✓ OAuth setup (Google, Facebook)
+7. ✓ OpenRouter setup
 8. ✓ Scheduled tasks
 9. ✓ Deployment notes
 

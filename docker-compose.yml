@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: docker/app/Dockerfile
+      target: dev
     container_name: car_maintenance_app
     restart: unless-stopped
     working_dir: /var/www
