@@ -8,6 +8,7 @@ export default function NotificationBell() {
     const [unreadCount, setUnreadCount] = useState(0);
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [markingIds, setMarkingIds] = useState(new Set());
 
     useEffect(() => {
         loadRecentNotifications();
@@ -45,6 +46,33 @@ export default function NotificationBell() {
                 return `Mileage updated for ${notification.data.car_make} ${notification.data.car_model}`;
             default:
                 return notification.data.message || 'New notification';
+        }
+    };
+
+    const markAsRead = async (notification) => {
+        if (notification.read_at || markingIds.has(notification.id)) {
+            return;
+        }
+
+        setMarkingIds((current) => new Set(current).add(notification.id));
+
+        try {
+            const response = await axios.post(`/notifications/${notification.id}/read`);
+
+            setNotifications((current) =>
+                current.map((item) =>
+                    item.id === notification.id ? { ...item, read_at: new Date().toISOString() } : item,
+                ),
+            );
+            setUnreadCount(response.data.unread_count ?? 0);
+        } catch (error) {
+            console.error('Failed to mark notification as read:', error);
+        } finally {
+            setMarkingIds((current) => {
+                const next = new Set(current);
+                next.delete(notification.id);
+                return next;
+            });
         }
     };
 
@@ -112,17 +140,20 @@ export default function NotificationBell() {
                         ) : (
                             <div className="max-h-60 overflow-y-auto">
                                 {notifications.map((notification) => (
-                                    <div
+                                    <button
+                                        type="button"
                                         key={notification.id}
-                                        className="border-b border-[var(--border)] px-4 py-3 last:border-b-0 hover:bg-[var(--surface-muted)]"
+                                        onClick={() => markAsRead(notification)}
+                                        disabled={notification.read_at !== null || markingIds.has(notification.id)}
+                                        className="block w-full border-b border-[var(--border)] px-4 py-3 text-left last:border-b-0 enabled:hover:bg-[var(--surface-muted)] disabled:cursor-default"
                                     >
-                                        <p className="text-sm text-[var(--text)]">
+                                        <p className={`text-sm ${notification.read_at ? 'text-[var(--text-muted)]' : 'font-semibold text-[var(--text)]'}`}>
                                             {getNotificationMessage(notification)}
                                         </p>
                                         <p className="mt-1 text-xs text-[var(--text-muted)]">
                                             {formatTimeAgo(notification.sent_at)}
                                         </p>
-                                    </div>
+                                    </button>
                                 ))}
                             </div>
                         )}
