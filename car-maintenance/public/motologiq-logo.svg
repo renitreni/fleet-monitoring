@@ -1,0 +1,7 @@
+<svg width="320" height="64" viewBox="0 0 320 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M13 4H43L57 18V46L43 60H13L4 51V13L13 4Z" fill="#E8583E"/>
+  <path d="M20 17H38L45 24V40L38 47H20L15 42V22L20 17Z" stroke="#FBF7ED" stroke-width="4"/>
+  <path d="M28 36L41 23" stroke="#F4FF72" stroke-width="4"/>
+  <circle cx="28" cy="36" r="3.5" fill="#F4FF72"/>
+  <text x="72" y="44" fill="#1D211B" font-family="Avenir Next, Arial, sans-serif" font-size="34" font-weight="800" letter-spacing="0.5">MOTOLOGIQ</text>
+</svg>

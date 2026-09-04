@@ -1,0 +1,142 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+
+@theme {
+    --font-sans: 'Arial Narrow', 'Roboto Condensed', 'Helvetica Neue', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+html {
+    scroll-behavior: smooth;
+    --background: #f3f1ec;
+    --surface: #ffffff;
+    --surface-muted: #e9e6df;
+    --text: #151719;
+    --text-muted: #656566;
+    --border: rgba(21, 23, 25, 0.14);
+    --accent: #d92520;
+    --accent-contrast: #ffffff;
+}
+
+html.dark {
+    --background: #090b0d;
+    --surface: #101316;
+    --surface-muted: #171b1f;
+    --text: #ffffff;
+    --text-muted: rgba(255, 255, 255, 0.48);
+    --border: rgba(255, 255, 255, 0.11);
+    --accent: #ee2b24;
+    --accent-contrast: #ffffff;
+}
+
+body {
+    background: var(--background);
+    color: var(--text);
+    transition: background-color 180ms ease, color 180ms ease;
+}
+
+.text-outline {
+    color: transparent;
+    -webkit-text-stroke: 1.5px color-mix(in srgb, var(--text) 85%, transparent);
+}
+
+.eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--accent);
+    font-size: 0.7rem;
+    font-weight: 900;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+}
+
+.eyebrow::before {
+    width: 2.5rem;
+    height: 1px;
+    background: currentColor;
+    content: '';
+}
+
+.motologiq-grid {
+    background-image: linear-gradient(color-mix(in srgb, var(--text) 5.5%, transparent) 1px, transparent 1px),
+        linear-gradient(90deg, color-mix(in srgb, var(--text) 5.5%, transparent) 1px, transparent 1px);
+    background-size: 64px 64px;
+    mask-image: linear-gradient(to right, black, transparent 85%);
+}
+
+.speed-lines {
+    background-image: repeating-linear-gradient(165deg, transparent 0, transparent 42px, rgba(0, 0, 0, 0.45) 43px, rgba(0, 0, 0, 0.45) 44px);
+}
+
+/* Light translation for the editorial landing and authentication artwork. */
+html:not(.dark) .editorial-shell .text-white { color: var(--text); }
+html:not(.dark) .editorial-shell .text-white\/75,
+html:not(.dark) .editorial-shell .text-white\/70,
+html:not(.dark) .editorial-shell .text-white\/65 { color: color-mix(in srgb, var(--text) 72%, transparent); }
+html:not(.dark) .editorial-shell .text-white\/55,
+html:not(.dark) .editorial-shell .text-white\/45,
+html:not(.dark) .editorial-shell .text-white\/40,
+html:not(.dark) .editorial-shell .text-white\/35,
+html:not(.dark) .editorial-shell .text-white\/30 { color: var(--text-muted); }
+html:not(.dark) .editorial-shell .border-white\/10,
+html:not(.dark) .editorial-shell .border-white\/15 { border-color: var(--border); }
+html:not(.dark) .editorial-shell .divide-white\/10 > :not(:last-child) { border-color: var(--border); }
+html:not(.dark) .editorial-shell .bg-\[\#090b0d\] { background-color: var(--background); }
+html:not(.dark) .editorial-shell .bg-\[\#101316\] { background-color: var(--surface); }
+html:not(.dark) .editorial-shell .bg-white\/10 { background-color: var(--border); }
+html:not(.dark) .editorial-shell .bg-white\/\[0\.025\],
+html:not(.dark) .editorial-shell .bg-white\/\[0\.03\],
+html:not(.dark) .editorial-shell .bg-white\/\[0\.04\] { background-color: color-mix(in srgb, var(--text) 3%, transparent); }
+html:not(.dark) .editorial-shell .hero-header,
+html:not(.dark) .editorial-shell .hero-stage { color: #fff; }
+html:not(.dark) .editorial-shell .hero-header .text-white,
+html:not(.dark) .editorial-shell .hero-header .text-white\/55,
+html:not(.dark) .editorial-shell .hero-header .text-white\/65,
+html:not(.dark) .editorial-shell .hero-stage .text-white,
+html:not(.dark) .editorial-shell .hero-stage .text-white\/35,
+html:not(.dark) .editorial-shell .hero-stage .text-white\/40,
+html:not(.dark) .editorial-shell .hero-stage .text-white\/45,
+html:not(.dark) .editorial-shell .hero-stage .text-white\/55,
+html:not(.dark) .editorial-shell .hero-stage .text-white\/65 { color: rgba(255, 255, 255, 0.72); }
+html:not(.dark) .editorial-shell .hero-header .text-white,
+html:not(.dark) .editorial-shell .hero-stage .text-white { color: #fff; }
+
+/* Legacy application utilities inherit the shared dark palette while screens migrate to semantic tokens. */
+.dark .app-shell .bg-white { background-color: var(--surface); }
+.dark .app-shell .bg-gray-50,
+.dark .app-shell .bg-gray-100 { background-color: var(--surface-muted); }
+.dark .app-shell .text-gray-900,
+.dark .app-shell .text-gray-800,
+.dark .app-shell .text-gray-700 { color: var(--text); }
+.dark .app-shell .text-gray-600,
+.dark .app-shell .text-gray-500,
+.dark .app-shell .text-gray-400 { color: var(--text-muted); }
+.dark .app-shell .border-gray-100,
+.dark .app-shell .border-gray-200,
+.dark .app-shell .border-gray-300,
+.dark .app-shell .ring-gray-300 { border-color: var(--border); }
+.dark .app-shell .hover\:bg-gray-50:hover,
+.dark .app-shell .hover\:bg-gray-100:hover { background-color: var(--surface-muted); }
+.dark .app-shell .hover\:text-gray-900:hover { color: var(--text); }
+.dark .app-shell .bg-indigo-50 { background-color: color-mix(in srgb, var(--accent) 12%, transparent); }
+.dark .app-shell .text-indigo-900,
+.dark .app-shell .text-indigo-600,
+.dark .app-shell .text-blue-600 { color: #ff625c; }
+.dark input,
+.dark select,
+.dark textarea { color-scheme: dark; }
+
+.app-shell .rounded-lg,
+.app-shell .rounded-md { border-radius: 0; }
+.app-shell .shadow-sm { box-shadow: none; }
+.app-shell div.bg-white.shadow-sm { border: 1px solid var(--border); }
+.app-shell .bg-indigo-600 { background-color: var(--accent); }
+.app-shell .hover\:bg-indigo-500:hover { background-color: color-mix(in srgb, var(--accent) 88%, white); }
+.app-shell .text-indigo-600,
+.app-shell .text-blue-600 { color: var(--accent); }
+.app-shell .focus\:ring-indigo-500:focus { --tw-ring-color: var(--accent); }
