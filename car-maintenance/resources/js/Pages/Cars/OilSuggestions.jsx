@@ -39,9 +39,20 @@ export default function OilSuggestions({ car, suggestion }) {
         });
 
     const data = suggestion?.suggestions_json ?? null;
-    const brands = Array.isArray(data?.brands)
-        ? data.brands.map((brand) => (typeof brand === 'object' && brand !== null ? brand : { name: String(brand) }))
-        : [];
+    const products = Array.isArray(data?.products)
+        ? data.products.slice(0, 3)
+        : Array.isArray(data?.brands)
+          ? data.brands.slice(0, 3).map((brand, index) => {
+                const legacyBrand = typeof brand === 'object' && brand !== null ? brand : { name: String(brand) };
+
+                return {
+                    brand: legacyBrand.name,
+                    product: legacyBrand.product || legacyBrand.name,
+                    role: index === 0 ? 'Assigned product' : 'Alternative',
+                    reason: legacyBrand.notes || legacyBrand.reason,
+                };
+            })
+          : [];
 
     const specs = data
         ? [
@@ -108,30 +119,36 @@ export default function OilSuggestions({ car, suggestion }) {
                             </div>
                         )}
 
-                        {/* Recommended brands */}
+                        {/* Recommended products */}
                         <div className="overflow-hidden bg-white shadow-sm sm:rounded-lg">
                             <div className="border-b border-gray-200 px-6 py-4">
-                                <h3 className="text-lg font-semibold text-gray-900">Recommended Brands</h3>
+                                <h3 className="text-lg font-semibold text-gray-900">Recommended Products</h3>
                             </div>
                             <div className="p-6">
-                                {brands.length > 0 ? (
+                                {products.length > 0 ? (
                                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                        {brands.map((brand, index) => (
+                                        {products.map((product, index) => (
                                             <div
-                                                key={`${brand.name}-${index}`}
+                                                key={`${product.brand}-${product.product}-${index}`}
                                                 className="rounded-md border border-gray-200 p-4"
                                             >
-                                                <p className="text-sm font-semibold text-gray-900">{brand.name}</p>
-                                                {(brand.product || brand.notes || brand.reason) && (
-                                                    <p className="mt-1 text-sm text-gray-600">
-                                                        {brand.product || brand.notes || brand.reason}
-                                                    </p>
+                                                <p className="text-xs font-medium uppercase tracking-wide text-[var(--accent)]">
+                                                    {product.role || (index === 0 ? 'Assigned product' : 'Alternative')}
+                                                </p>
+                                                <p className="mt-1 text-sm font-semibold text-gray-900">
+                                                    {product.product}
+                                                </p>
+                                                {product.brand && (
+                                                    <p className="mt-1 text-sm text-gray-600">{product.brand}</p>
+                                                )}
+                                                {product.reason && (
+                                                    <p className="mt-2 text-sm text-gray-600">{product.reason}</p>
                                                 )}
                                             </div>
                                         ))}
                                     </div>
                                 ) : (
-                                    <p className="text-sm text-gray-600">No brand recommendations were returned.</p>
+                                    <p className="text-sm text-gray-600">No product recommendations were returned.</p>
                                 )}
                             </div>
                         </div>

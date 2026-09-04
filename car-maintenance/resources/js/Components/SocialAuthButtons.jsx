@@ -1,4 +1,4 @@
-import { GoogleIcon, FacebookIcon } from './OAuthIcons';
+import { GoogleIcon } from './OAuthIcons';
 
 export default function SocialAuthButtons() {
     return (
@@ -12,21 +12,13 @@ export default function SocialAuthButtons() {
                 </div>
             </div>
 
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <div className="mt-5">
                 <a
                     href="/auth/google"
                     className="inline-flex h-12 w-full items-center justify-center gap-3 border border-white/15 bg-white/[0.03] px-4 text-sm font-bold text-white/75 transition hover:border-white/30 hover:bg-white/[0.07] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#ee2b24] focus:ring-offset-2 focus:ring-offset-[#101316]"
                 >
                     <GoogleIcon />
                     Continue with Google
-                </a>
-
-                <a
-                    href="/auth/facebook"
-                    className="inline-flex h-12 w-full items-center justify-center gap-3 border border-[#1877F2] bg-[#1877F2] px-4 text-sm font-bold text-white transition hover:border-[#4092f5] hover:bg-[#4092f5] focus:outline-none focus:ring-2 focus:ring-[#1877F2] focus:ring-offset-2 focus:ring-offset-[#101316]"
-                >
-                    <FacebookIcon />
-                    Continue with Facebook
                 </a>
             </div>
         </div>

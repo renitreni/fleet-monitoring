@@ -13,14 +13,15 @@ class OpenRouterService
     public function getOilSuggestions(string $make, string $model, int $year, string $country, ?int $mileage = null): ?array
     {
         $mileageNote = $mileage !== null
-            ? PHP_EOL.'The car currently has '.number_format($mileage).' kilometers on the odometer.'
+            ? PHP_EOL.'The vehicle currently has '.number_format($mileage).' kilometers on the odometer.'
             : '';
 
         $prompt = <<<PROMPT
-Recommend the manufacturer-backed engine oil and oil-change service interval for a {$year} {$make} {$model} sold in {$country}.{$mileageNote}
+Recommend the manufacturer-backed engine oil and oil-change service interval for a {$year} {$make} {$model} vehicle sold in {$country}. The vehicle may be a car or a two-wheeled vehicle, so infer its category from the make and model and only recommend products formulated for that category.{$mileageNote}
 Prefer the official maintenance schedule for this market. If an exact schedule is uncertain, choose a conservative interval and explain that uncertainty. Never invent a source.
-Return one JSON object with exactly these keys: viscosity, oil_type, specification, capacity_liters, interval_months, interval_kilometers, interval_basis, brands, notes.
-interval_months and interval_kilometers must be positive integers. interval_basis must briefly identify whether the recommendation is manufacturer-backed or conservative. brands must be an array.
+Return one JSON object with exactly these keys: viscosity, oil_type, specification, capacity_liters, interval_months, interval_kilometers, interval_basis, products, notes.
+interval_months and interval_kilometers must be positive integers. interval_basis must briefly identify whether the recommendation is manufacturer-backed or conservative.
+products must contain exactly three objects with exactly these string keys: brand, product, role, reason. Use an exact, purchasable product name rather than only a brand name. The first product must be the oil assigned or officially recommended for this vehicle and its role must be "Assigned product". The second and third products must be compatible alternatives and their role must be "Alternative". Every product must match the recommended viscosity and specification. If the exact factory-filled product is not documented, use the vehicle manufacturer's genuine/OEM oil for this market as the assigned product and explain the basis in reason.
 PROMPT;
 
         $suggestions = $this->requestCompletion($prompt);
@@ -32,8 +33,10 @@ PROMPT;
         // Validate the structure of the response
         if (
             empty($suggestions['viscosity'])
-            || ! isset($suggestions['brands'])
-            || ! is_array($suggestions['brands'])
+            || ! isset($suggestions['products'])
+            || ! is_array($suggestions['products'])
+            || count($suggestions['products']) !== 3
+            || ! $this->hasValidProducts($suggestions['products'])
             || ! is_int($suggestions['interval_months'] ?? null)
             || ! is_int($suggestions['interval_kilometers'] ?? null)
             || $suggestions['interval_months'] < 1
@@ -49,6 +52,32 @@ PROMPT;
         }
 
         return $suggestions;
+    }
+
+    /**
+     * @param  array<int, mixed>  $products
+     */
+    protected function hasValidProducts(array $products): bool
+    {
+        foreach ($products as $index => $product) {
+            if (! is_array($product)) {
+                return false;
+            }
+
+            foreach (['brand', 'product', 'role', 'reason'] as $key) {
+                if (! isset($product[$key]) || ! is_string($product[$key]) || trim($product[$key]) === '') {
+                    return false;
+                }
+            }
+
+            $expectedRole = $index === 0 ? 'Assigned product' : 'Alternative';
+
+            if ($product['role'] !== $expectedRole) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

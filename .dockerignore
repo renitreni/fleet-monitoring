@@ -22,5 +22,7 @@ car-maintenance/.env
 car-maintenance/.env.*.local
 car-maintenance/.env.testing
 car-maintenance/.phpunit.result.cache
+car-maintenance/public/hot
+car-maintenance/bootstrap/cache/*.php
 car-maintenance/tests/
 .github/

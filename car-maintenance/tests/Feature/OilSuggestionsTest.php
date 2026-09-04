@@ -39,9 +39,10 @@ class OilSuggestionsTest extends TestCase
             'interval_months' => 12,
             'interval_kilometers' => 10000,
             'interval_basis' => 'Manufacturer normal-service schedule.',
-            'brands' => [
-                ['name' => 'Mobil 1', 'notes' => 'OEM-equivalent full synthetic.'],
-                ['name' => 'Castrol EDGE', 'notes' => 'Widely available full synthetic.'],
+            'products' => [
+                ['brand' => 'Toyota', 'product' => 'Toyota Genuine Motor Oil 0W-20', 'role' => 'Assigned product', 'reason' => 'OEM oil.'],
+                ['brand' => 'Mobil 1', 'product' => 'Mobil 1 Advanced Fuel Economy 0W-20', 'role' => 'Alternative', 'reason' => 'Compatible.'],
+                ['brand' => 'Castrol', 'product' => 'Castrol EDGE 0W-20 Advanced Full Synthetic', 'role' => 'Alternative', 'reason' => 'Compatible.'],
             ],
             'notes' => 'Always confirm with the owner manual.',
         ];
@@ -123,7 +124,8 @@ class OilSuggestionsTest extends TestCase
         $this->assertSame('0W-20', $suggestion->suggestions_json['viscosity']);
         $this->assertSame(12, $suggestion->suggestions_json['interval_months']);
         $this->assertSame(10000, $suggestion->suggestions_json['interval_kilometers']);
-        $this->assertCount(2, $suggestion->suggestions_json['brands']);
+        $this->assertCount(3, $suggestion->suggestions_json['products']);
+        $this->assertSame('Toyota Genuine Motor Oil 0W-20', $suggestion->suggestions_json['products'][0]['product']);
 
         // A second request is served entirely from the cache — no API call.
         $this->actingAs($user)

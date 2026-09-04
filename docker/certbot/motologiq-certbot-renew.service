@@ -1,0 +1,9 @@
+[Unit]
+Description=Renew MotoLogIQ Let's Encrypt certificate
+After=docker.service network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/docker run --rm -v /etc/letsencrypt:/etc/letsencrypt -v /opt/fleet-monitoring/docker/web/acme:/var/www/acme certbot/certbot:latest renew --quiet
+ExecStartPost=/usr/bin/docker exec car_maintenance_web nginx -s reload
