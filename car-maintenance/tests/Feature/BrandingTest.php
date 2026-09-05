@@ -10,20 +10,20 @@ use Tests\TestCase;
 
 class BrandingTest extends TestCase
 {
-    public function test_application_shell_renders_motologiq_identity_and_icons(): void
+    public function test_application_shell_renders_motologic_identity_and_icons(): void
     {
         $response = $this->get('/');
 
         $response
             ->assertOk()
-            ->assertSee('<title inertia>Motologiq</title>', false)
+            ->assertSee('<title inertia>Motologic</title>', false)
             ->assertSee('<meta name="theme-color" content="#f3f1ec">', false)
-            ->assertSee("localStorage.getItem('motologiq-theme')", false)
+            ->assertSee("localStorage.getItem('motologic-theme')", false)
             ->assertSee('<link rel="icon" href="/favicon.svg" type="image/svg+xml">', false)
             ->assertSee('<link rel="apple-touch-icon" href="/apple-touch-icon.png">', false);
     }
 
-    public function test_oil_change_email_uses_motologiq_sign_off(): void
+    public function test_oil_change_email_uses_motologic_sign_off(): void
     {
         $user = new User(['name' => 'Renier']);
         $car = new Car([
@@ -41,6 +41,6 @@ class BrandingTest extends TestCase
 
         $message = $notification->toMail($user);
 
-        $this->assertContains('Thank you for using Motologiq!', $message->outroLines);
+        $this->assertContains('Thank you for using Motologic!', $message->outroLines);
     }
 }

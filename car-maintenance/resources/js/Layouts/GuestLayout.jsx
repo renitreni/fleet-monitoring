@@ -6,11 +6,11 @@ export default function GuestLayout({ title, children }) {
     return (
         <div className="editorial-shell relative min-h-screen overflow-hidden bg-[var(--background)] text-[var(--text)] selection:bg-[var(--accent)] selection:text-white">
             <Head title={title} />
-            <div className="motologiq-grid pointer-events-none absolute inset-0 opacity-30" />
+            <div className="motologic-grid pointer-events-none absolute inset-0 opacity-30" />
             <div className="pointer-events-none absolute -right-36 -top-36 h-[32rem] w-[32rem] rounded-full bg-[#ee2b24]/10 blur-[120px]" />
 
             <header className="relative z-10 mx-auto flex h-20 max-w-[1480px] items-center justify-between px-5 sm:px-8 lg:px-12">
-                <Link href="/" aria-label="Motologiq home">
+                <Link href="/" aria-label="Motologic home">
                     <BrandLogo wordmarkClassName="text-[var(--text)]" />
                 </Link>
                 <ThemeToggle />

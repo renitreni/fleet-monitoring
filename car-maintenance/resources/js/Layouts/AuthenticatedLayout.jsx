@@ -48,7 +48,7 @@ export default function AuthenticatedLayout({ title, header, children }) {
             <nav className="sticky top-0 z-40 border-b border-[var(--border)] bg-[var(--background)]/95 backdrop-blur-xl">
                 <div className="mx-auto flex h-20 max-w-[1480px] items-center justify-between px-5 sm:px-8 lg:px-12">
                     <div className="flex items-center gap-10">
-                        <Link href="/" aria-label="Motologiq home">
+                        <Link href="/" aria-label="Motologic home">
                             <BrandLogo wordmarkClassName="text-[var(--text)]" />
                         </Link>
                         <div className="hidden items-center gap-8 md:flex">

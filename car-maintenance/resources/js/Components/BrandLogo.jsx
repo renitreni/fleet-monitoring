@@ -11,7 +11,7 @@ export default function BrandLogo({
                 <path d="m24 28 10-10" stroke="white" strokeWidth="3.5" />
                 <circle cx="24" cy="28" r="2.5" fill="white" />
             </svg>
-            <span className={`text-xl font-black tracking-[-0.02em] ${wordmarkClassName}`}>MOTOLOGIQ</span>
+            <span className={`text-xl font-black tracking-[-0.02em] ${wordmarkClassName}`}>MOTOLOGIC</span>
         </span>
     );
 }

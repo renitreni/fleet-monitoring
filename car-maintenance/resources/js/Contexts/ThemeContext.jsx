@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
 const ThemeContext = createContext(null);
-const storageKey = 'motologiq-theme';
+const storageKey = 'motologic-theme';
 
 function getSystemTheme() {
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';

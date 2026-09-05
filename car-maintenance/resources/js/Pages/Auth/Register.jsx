@@ -25,7 +25,7 @@ export default function Register() {
     return (
         <GuestLayout title="Create account">
             <div className="mb-8">
-                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#ee2b24]">Join Motologiq</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#ee2b24]">Join Motologic</p>
                 <h1 className="mt-3 text-4xl font-black uppercase tracking-[-0.045em] text-white">Create account</h1>
                 <p className="mt-3 text-base leading-7 text-white/45">
                     Build a clear maintenance record for every car you own.

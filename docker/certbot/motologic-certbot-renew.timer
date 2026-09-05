@@ -1,5 +1,5 @@
 [Unit]
-Description=Renew MotoLogIQ TLS certificate twice daily
+Description=Renew Motologic TLS certificate twice daily
 
 [Timer]
 OnCalendar=*-*-* 00,12:17:00

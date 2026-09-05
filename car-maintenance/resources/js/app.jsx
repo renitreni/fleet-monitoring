@@ -6,7 +6,7 @@ import ErrorBoundary from '@/Components/ErrorBoundary';
 import { ThemeProvider } from '@/Contexts/ThemeContext';
 
 createInertiaApp({
-    title: (title) => `${title} - ${import.meta.env.VITE_APP_NAME ?? 'Motologiq'}`,
+    title: (title) => `${title} - ${import.meta.env.VITE_APP_NAME ?? 'Motologic'}`,
     resolve: (name) => {
         const pages = import.meta.glob('./Pages/**/*.jsx', { eager: true });
         return pages[`./Pages/${name}.jsx`];

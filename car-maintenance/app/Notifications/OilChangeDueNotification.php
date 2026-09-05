@@ -51,7 +51,7 @@ class OilChangeDueNotification extends Notification
             ->line("Next due mileage: {$this->oilChange->next_due_mileage} km")
             ->line("Current mileage: {$this->car->current_mileage} km")
             ->action('View Car', route('cars.show', $this->car))
-            ->line('Thank you for using Motologiq!');
+            ->line('Thank you for using Motologic!');
     }
 
     /**

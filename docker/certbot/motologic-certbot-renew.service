@@ -1,5 +1,5 @@
 [Unit]
-Description=Renew MotoLogIQ Let's Encrypt certificate
+Description=Renew Motologic Let's Encrypt certificate
 After=docker.service network-online.target
 Requires=docker.service
 

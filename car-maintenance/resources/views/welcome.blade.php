@@ -4,7 +4,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title>{{ config('app.name', 'Motologiq') }}</title>
+        <title>{{ config('app.name', 'Motologic') }}</title>
 
         @fonts
 

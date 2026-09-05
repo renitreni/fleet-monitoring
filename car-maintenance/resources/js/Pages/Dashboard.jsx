@@ -44,7 +44,7 @@ export default function Dashboard() {
                 </div>
             }
         >
-            <div className="motologiq-grid pointer-events-none fixed inset-0 opacity-25" />
+            <div className="motologic-grid pointer-events-none fixed inset-0 opacity-25" />
             <div className="relative mx-auto max-w-[1480px] px-5 py-8 sm:px-8 lg:px-12 lg:py-12">
                 <section className="grid border border-[var(--border)] bg-[var(--surface)] lg:grid-cols-[1.25fr_.75fr]">
                     <div className="p-7 sm:p-10 lg:p-12">

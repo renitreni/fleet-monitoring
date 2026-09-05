@@ -29,7 +29,7 @@ export default function Welcome() {
             <div className="editorial-shell min-h-screen bg-[var(--background)] text-[var(--text)] selection:bg-[var(--accent)] selection:text-white">
                 <header className="hero-header absolute inset-x-0 top-0 z-40 border-b border-white/10">
                     <nav className="mx-auto flex h-20 max-w-[1480px] items-center justify-between px-5 sm:px-8 lg:px-12">
-                        <a href="#top" aria-label="Motologiq home">
+                        <a href="#top" aria-label="Motologic home">
                             <BrandLogo wordmarkClassName="text-white" />
                         </a>
                         <div className="hidden items-center gap-9 text-[12px] font-bold uppercase tracking-[0.18em] text-white/55 lg:flex">
@@ -75,13 +75,13 @@ export default function Welcome() {
                 <main id="top">
                     <section className="hero-stage relative isolate min-h-[900px] overflow-hidden border-b border-white/10">
                         <img
-                            src="/images/motologiq-hero.png"
+                            src="/images/motologic-hero.png"
                             alt="Graphite performance car in a night-time pit lane"
                             className="absolute inset-0 h-full w-full object-cover object-[66%_center]"
                         />
                         <div className="absolute inset-0 bg-[linear-gradient(90deg,#090b0d_0%,rgba(9,11,13,.93)_27%,rgba(9,11,13,.35)_64%,rgba(9,11,13,.06)_100%)]" />
                         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(9,11,13,.55)_0%,transparent_25%,transparent_70%,#090b0d_100%)]" />
-                        <div className="motologiq-grid absolute inset-0 opacity-25" />
+                        <div className="motologic-grid absolute inset-0 opacity-25" />
 
                         <div className="relative mx-auto flex min-h-[900px] max-w-[1480px] items-end px-5 pb-20 pt-36 sm:px-8 lg:items-center lg:px-12 lg:pb-0">
                             <div className="max-w-[760px]">
@@ -94,7 +94,7 @@ export default function Welcome() {
                                     <span className="text-outline">ready.</span>
                                 </h1>
                                 <p className="mt-9 max-w-xl text-lg leading-8 text-white/65 sm:text-xl">
-                                    Your car tells a story in kilometers, oil, and time. Motologiq reads the signals and
+                                    Your car tells a story in kilometers, oil, and time. Motologic reads the signals and
                                     keeps you ahead of what comes next.
                                 </p>
                                 <div className="mt-10 flex flex-col gap-5 sm:flex-row sm:items-center">
@@ -248,7 +248,7 @@ export default function Welcome() {
                                             <div className="flex items-center gap-4 border border-white/10 bg-white/[0.025] p-4">
                                                 <StatusIcon>✦</StatusIcon>
                                                 <div className="min-w-0 grow">
-                                                    <p className="text-sm font-bold">Motologiq intelligence</p>
+                                                    <p className="text-sm font-bold">Motologic intelligence</p>
                                                     <p className="mt-1 text-xs text-white/35">Oil match is ready</p>
                                                 </div>
                                                 <Arrow />
@@ -268,7 +268,7 @@ export default function Welcome() {
                         <div className="relative mx-auto grid max-w-[1384px] gap-14 lg:grid-cols-[.8fr_1.2fr] lg:items-center">
                             <div>
                                 <p className="text-xs font-black uppercase tracking-[0.22em] text-black/45">
-                                    Motologiq intelligence
+                                    Motologic intelligence
                                 </p>
                                 <p className="mt-8 font-mono text-7xl font-bold tracking-[-0.07em] sm:text-9xl">
                                     0W<span className="text-black/25">—</span>20
@@ -302,7 +302,7 @@ export default function Welcome() {
                                         Your complete garage memory.
                                     </h2>
                                     <p className="mt-8 max-w-lg text-lg leading-8 text-white/45">
-                                        Every change, every kilometer, every next step. Motologiq turns scattered car
+                                        Every change, every kilometer, every next step. Motologic turns scattered car
                                         care into a clear record you can trust.
                                     </p>
                                 </div>
@@ -340,7 +340,7 @@ export default function Welcome() {
 
                     <section className="px-5 pb-6 sm:px-8 lg:px-12">
                         <div className="relative mx-auto max-w-[1384px] overflow-hidden border border-white/10 bg-[#101316] px-6 py-20 text-center sm:px-12 lg:py-28">
-                            <div className="motologiq-grid absolute inset-0 opacity-20" />
+                            <div className="motologic-grid absolute inset-0 opacity-20" />
                             <div className="relative">
                                 <p className="eyebrow">Your next drive starts here</p>
                                 <h2 className="mx-auto mt-6 max-w-5xl text-5xl font-black uppercase leading-[0.88] tracking-[-0.06em] sm:text-8xl">
@@ -369,7 +369,7 @@ export default function Welcome() {
                     <div className="flex flex-wrap gap-7 text-xs font-bold uppercase tracking-[0.12em] text-white/35">
                         <a href="#platform">Platform</a>
                         <Link href="/login">Sign in</Link>
-                        <Link href="/register">Join Motologiq</Link>
+                        <Link href="/register">Join Motologic</Link>
                         <span>© {new Date().getFullYear()}</span>
                     </div>
                 </footer>
