@@ -1,6 +1,7 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import BrandLogo from '@/Components/BrandLogo';
 import ThemeToggle from '@/Components/ThemeToggle';
+import { useTheme } from '@/Contexts/ThemeContext';
 
 const Arrow = () => (
     <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
@@ -16,6 +17,7 @@ const StatusIcon = ({ children }) => (
 
 export default function Welcome() {
     const user = usePage().props.auth?.user;
+    const { theme } = useTheme();
 
     return (
         <>
@@ -75,8 +77,8 @@ export default function Welcome() {
                 <main id="top">
                     <section className="hero-stage relative isolate min-h-[900px] overflow-hidden border-b border-white/10">
                         <img
-                            src="/images/motologic-hero.png"
-                            alt="Graphite performance car in a night-time pit lane"
+                            src={theme === 'dark' ? '/images/motologic-hero.png' : '/images/motologic-hero-light.png'}
+                            alt={`Graphite performance car in a ${theme === 'dark' ? 'night-time' : 'daylight'} pit lane`}
                             className="absolute inset-0 h-full w-full object-cover object-[66%_center]"
                         />
                         <div className="absolute inset-0 bg-[linear-gradient(90deg,#090b0d_0%,rgba(9,11,13,.93)_27%,rgba(9,11,13,.35)_64%,rgba(9,11,13,.06)_100%)]" />
