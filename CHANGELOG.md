@@ -113,3 +113,13 @@ _No unreleased changes yet._
 
 #### Security
 - Security improvements
+
+## 2026-09-08 — Group road trips
+
+- Added a trip admin control panel with map-based route creation and ordered required checkpoints.
+- Added authenticated invitations, private participant maps, explicit GPS controls, verified-progress standings and stale status.
+- Added opt-in landing-page leaderboards with route creator attribution.
+- Added GPS retention cleanup, an admin grant/revoke command, and automated permission/progress tests.
+- Preserved invitation destinations through registration and updated documentation for the installed stack.
+
+Activation and privacy details: [ROAD_TRIPS.md](ROAD_TRIPS.md).

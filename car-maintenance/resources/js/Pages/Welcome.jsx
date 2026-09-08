@@ -1,4 +1,5 @@
 import { Head, Link, usePage } from '@inertiajs/react';
+import TripLeaderboard from '@/Components/TripLeaderboard';
 import BrandLogo from '@/Components/BrandLogo';
 import ThemeToggle from '@/Components/ThemeToggle';
 import { useTheme } from '@/Contexts/ThemeContext';
@@ -15,7 +16,7 @@ const StatusIcon = ({ children }) => (
     </span>
 );
 
-export default function Welcome() {
+export default function Welcome({ publicTrips = [] }) {
     const user = usePage().props.auth?.user;
     const { theme } = useTheme();
 
@@ -40,6 +41,9 @@ export default function Welcome() {
                             </a>
                             <a href="#intelligence" className="transition hover:text-white">
                                 Intelligence
+                            </a>
+                            <a href="#road-trips" className="transition hover:text-white">
+                                Road trips
                             </a>
                             <a href="#garage" className="transition hover:text-white">
                                 Your garage
@@ -292,6 +296,65 @@ export default function Welcome() {
                                     so the answer is ready when you are.
                                 </p>
                             </div>
+                        </div>
+                    </section>
+
+                    <section id="road-trips" className="border-y border-[var(--border)] px-5 py-20 sm:px-8 lg:px-12">
+                        <div className="mx-auto max-w-[1384px] space-y-8">
+                            <div className="flex flex-wrap items-end justify-between gap-6">
+                                <div>
+                                    <p className="eyebrow">Together on the road</p>
+                                    <h2 className="mt-5 text-4xl font-black uppercase tracking-tight sm:text-6xl">
+                                        The route. The group.
+                                        <br />
+                                        Every checkpoint.
+                                    </h2>
+                                    <p className="mt-5 max-w-2xl text-[var(--text-muted)]">
+                                        Explore community route challenges and the drivers taking them on. Rankings
+                                        celebrate verified progress and ordered checkpoints, with no speed or
+                                        arrival-time advantage.
+                                    </p>
+                                </div>
+                                <Link
+                                    href={user ? '/trips' : '/login'}
+                                    className="bg-[var(--accent)] px-6 py-4 text-xs font-black uppercase tracking-widest text-white"
+                                >
+                                    {user ? 'My road trips' : 'Sign in to join a trip'} →
+                                </Link>
+                            </div>
+                            {!publicTrips.length && (
+                                <p className="border border-dashed border-[var(--border)] p-8 text-[var(--text-muted)]">
+                                    The next group adventure is taking shape. Featured routes and shared results will
+                                    appear here.
+                                </p>
+                            )}
+                            {publicTrips.map((trip) => (
+                                <article
+                                    key={trip.id}
+                                    className="space-y-5 border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-8"
+                                >
+                                    <div>
+                                        <p className="text-xs font-bold uppercase tracking-widest text-[var(--accent)]">
+                                            {trip.open ? 'Open route challenge' : 'Completed event'}
+                                        </p>
+                                        <h3 className="mt-2 text-2xl font-black uppercase">{trip.name}</h3>
+                                        <p className="mt-2 text-sm text-[var(--text-muted)]">
+                                            Route created by <strong>{trip.creator}</strong> · {trip.distance_km} km ·{' '}
+                                            {trip.checkpoint_count} required checkpoints
+                                        </p>
+                                    </div>
+                                    <TripLeaderboard
+                                        rows={trip.standings}
+                                        checkpointCount={trip.checkpoint_count}
+                                        publicView
+                                    />
+                                </article>
+                            ))}
+                            <p className="text-xs leading-6 text-[var(--text-muted)]">
+                                Showing up to six featured routes and ten shared entries per route. Participants choose
+                                whether to appear. Live locations stay private to each trip. Ask the organizer for an
+                                invitation to join.
+                            </p>
                         </div>
                     </section>
 

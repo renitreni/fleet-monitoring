@@ -6,10 +6,13 @@ use App\Models\Car;
 use App\Models\OilChange;
 use App\Models\User;
 use App\Notifications\OilChangeDueNotification;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class BrandingTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_application_shell_renders_motologic_identity_and_icons(): void
     {
         $response = $this->get('/');

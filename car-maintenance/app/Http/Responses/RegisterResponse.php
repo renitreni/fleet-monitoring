@@ -18,6 +18,6 @@ class RegisterResponse implements RegisterResponseContract
             return new JsonResponse('', Response::HTTP_CREATED);
         }
 
-        return redirect(config('fortify.home'))->with('success', 'Your account has been created successfully.');
+        return redirect()->intended(config('fortify.home'))->with('success', 'Your account has been created successfully.');
     }
 }

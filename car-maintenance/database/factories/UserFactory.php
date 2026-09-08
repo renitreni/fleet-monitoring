@@ -58,6 +58,11 @@ class UserFactory extends Factory
         ]);
     }
 
+    public function tripAdmin(): static
+    {
+        return $this->state(fn (array $attributes) => ['is_trip_admin' => true]);
+    }
+
     public function premium(): static
     {
         return $this->state(fn (array $attributes) => [

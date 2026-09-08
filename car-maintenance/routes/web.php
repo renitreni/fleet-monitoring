@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminTripController;
 use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\CarMileageController;
 use App\Http\Controllers\CarsController;
@@ -7,10 +8,14 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\NotificationsController;
 use App\Http\Controllers\OilChangesController;
 use App\Http\Controllers\OilSuggestionsController;
+use App\Http\Controllers\TripController;
+use App\Http\Controllers\TripTrackingController;
+use App\Http\Middleware\PrivateTripResponse;
+use App\Services\TripStandings;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return inertia('Welcome');
+Route::get('/', function (TripStandings $standings) {
+    return inertia('Welcome', ['publicTrips' => $standings->publicTrips()]);
 });
 
 Route::middleware(['guest'])->group(function () {
@@ -48,4 +53,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('notifications.recent');
     Route::post('/notifications/{id}/read', [NotificationsController::class, 'markAsRead'])
         ->name('notifications.read');
+});
+
+Route::middleware(['auth', PrivateTripResponse::class])->group(function () {
+    Route::get('/admin/trips', [AdminTripController::class, 'index'])->name('admin.trips.index');
+    Route::post('/admin/trips', [AdminTripController::class, 'store'])->middleware('throttle:10,1')->name('admin.trips.store');
+    Route::patch('/admin/trips/{trip}', [AdminTripController::class, 'update'])->name('admin.trips.update');
+    Route::get('/trips', [TripController::class, 'index'])->name('trips.index');
+    Route::get('/trips/invitations/{token}', [TripController::class, 'invite'])->name('trips.invite');
+    Route::post('/trips/invitations/{token}', [TripController::class, 'join'])->middleware('throttle:10,1')->name('trips.join');
+    Route::get('/trips/{trip}', [TripController::class, 'show'])->name('trips.show');
+    Route::post('/trips/{trip}/start', [TripTrackingController::class, 'start'])->middleware('throttle:10,1')->name('trips.start');
+    Route::post('/trips/{trip}/stop', [TripTrackingController::class, 'stop'])->name('trips.stop');
+    Route::post('/trips/{trip}/locations', [TripTrackingController::class, 'store'])->middleware('throttle:30,1')->name('trips.location');
+    Route::post('/trips/{trip}/leave', [TripController::class, 'leave'])->name('trips.leave');
+    Route::patch('/trips/{trip}/consent', [TripController::class, 'consent'])->name('trips.consent');
 });

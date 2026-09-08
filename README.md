@@ -6,8 +6,8 @@ A full-stack web application for car owners to track oil changes, monitor mainte
 
 | Layer | Technology |
 |-------|-----------|
-| Backend | Laravel 11 (PHP 8.3) |
-| Frontend | React 19 + InertiaJS |
+| Backend | Laravel 13 (PHP 8.4) |
+| Frontend | React 19 + InertiaJS 3 |
 | Styling | Tailwind CSS 4 |
 | Database | MySQL 8.0 |
 | Cache | Redis |
@@ -23,6 +23,9 @@ A full-stack web application for car owners to track oil changes, monitor mainte
 - **Notifications** — Daily email reminders when oil change is due
 - **Oil Suggestions** — AI-powered engine oil recommendations (cached forever)
 - **Dashboard** — Overview of all cars with status badges
+- **Group road trips** — Admin route/checkpoint editor, authenticated invitations, private live GPS map, verified-progress standings, and opt-in landing-page leaderboards
+
+See [Road trip setup, organizer guide, privacy, and staged commands](ROAD_TRIPS.md).
 
 ## Quick Start (Docker)
 

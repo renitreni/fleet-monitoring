@@ -8,12 +8,14 @@ import ThemeToggle from '@/Components/ThemeToggle';
 const navigation = [
     { label: 'Dashboard', href: '/dashboard' },
     { label: 'My cars', href: '/cars' },
+    { label: 'Road trips', href: '/trips' },
 ];
 
 export default function AuthenticatedLayout({ title, header, children }) {
     const page = usePage();
     const user = page.props.auth.user;
     const url = page.url;
+    const items = user?.is_trip_admin ? [...navigation, { label: 'Trip admin', href: '/admin/trips' }] : navigation;
     const { post } = useForm();
     const [menuOpen, setMenuOpen] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
@@ -40,7 +42,7 @@ export default function AuthenticatedLayout({ title, header, children }) {
               .join('')
               .toUpperCase()
         : '?';
-    const isActive = (href) => url === href || (href === '/cars' && url.startsWith('/cars'));
+    const isActive = (href) => url === href || url.startsWith(`${href}/`);
 
     return (
         <div className="app-shell min-h-screen bg-[var(--background)] text-[var(--text)] selection:bg-[var(--accent)] selection:text-white">
@@ -52,7 +54,7 @@ export default function AuthenticatedLayout({ title, header, children }) {
                             <BrandLogo wordmarkClassName="text-[var(--text)]" />
                         </Link>
                         <div className="hidden items-center gap-8 md:flex">
-                            {navigation.map((item) => (
+                            {items.map((item) => (
                                 <Link
                                     key={item.href}
                                     href={item.href}
@@ -88,7 +90,7 @@ export default function AuthenticatedLayout({ title, header, children }) {
                                         <p className="mt-1 truncate text-xs text-[var(--text-muted)]">{user?.email}</p>
                                     </div>
                                     <div className="p-2">
-                                        {navigation.map((item) => (
+                                        {items.map((item) => (
                                             <Link
                                                 key={item.href}
                                                 href={item.href}
@@ -123,7 +125,7 @@ export default function AuthenticatedLayout({ title, header, children }) {
                 </div>
                 {mobileOpen && (
                     <div className="border-t border-[var(--border)] bg-[var(--surface)] px-5 py-3 md:hidden">
-                        {navigation.map((item) => (
+                        {items.map((item) => (
                             <Link
                                 key={item.href}
                                 href={item.href}

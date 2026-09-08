@@ -56,3 +56,7 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## Group road trips
+
+See [the road-trip MVP guide](../ROAD_TRIPS.md) for admin activation, route creation, tracking, public leaderboards, GPS verification, retention, tests, and optional daily command checkpoints. The installed stack is Laravel 13 / PHP 8.4, React 19, Inertia 3, and Tailwind 4.

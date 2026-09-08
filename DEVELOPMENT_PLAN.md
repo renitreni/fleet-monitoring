@@ -1017,3 +1017,7 @@ docker-compose exec app npm run build
 # Watch for changes
 docker-compose exec node npm run dev
 ```
+
+## September 2026 — Group road-trip MVP
+
+Implemented in four manageable stages: trip schema and authorization; admin route/checkpoint editor and authenticated invitation flow; GPS verification, private map and progress standings; landing-page creator attribution, opt-in results and retention documentation. Existing maintenance functionality is preserved. See [ROAD_TRIPS.md](ROAD_TRIPS.md) for delivered scope, validation, deployment commands, operational requirements, and deferred enhancements.
