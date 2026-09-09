@@ -28,3 +28,30 @@ export function dragView(pointer, clientX, clientY) {
         },
     };
 }
+
+export function pinchView(gesture, points) {
+    const distance = ([a, b]) => Math.hypot(b.x - a.x, b.y - a.y);
+    const midpoint = ([a, b]) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+    const initialDistance = Math.max(1, distance(gesture.points));
+    const zoom = Math.max(
+        3,
+        Math.min(18, gesture.view.zoom + Math.log2(Math.max(1, distance(points)) / initialDistance))
+    );
+    const start = midpoint(gesture.points);
+    const current = midpoint(points);
+    const { bounds } = gesture;
+    const origin = world(gesture.view.center, gesture.view.zoom);
+    const scale = 2 ** (zoom - gesture.view.zoom);
+    return {
+        zoom,
+        center: coordinates(
+            (origin[0] + ((start.x - bounds.left) * WIDTH) / bounds.width - WIDTH / 2) * scale -
+                ((current.x - bounds.left) * WIDTH) / bounds.width +
+                WIDTH / 2,
+            (origin[1] + ((start.y - bounds.top) * HEIGHT) / bounds.height - HEIGHT / 2) * scale -
+                ((current.y - bounds.top) * HEIGHT) / bounds.height +
+                HEIGHT / 2,
+            zoom
+        ),
+    };
+}

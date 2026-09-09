@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Button from '@/Components/Button';
-import { WIDTH, HEIGHT, world, coordinates, dragView } from '@/lib/tripMap';
+import { WIDTH, HEIGHT, world, coordinates, dragView, pinchView } from '@/lib/tripMap';
 
 function fit(points) {
     if (!points.length) return { center: { latitude: 14.5995, longitude: 120.9842 }, zoom: 12 };
@@ -39,6 +39,8 @@ export default function TripMap({
     const [view, setView] = useState(() => fit(points));
     const [tileError, setTileError] = useState(false);
     const pointer = useRef(null);
+    const touches = useRef(new Map());
+    const pinch = useRef(null);
     const [dragging, setDragging] = useState(false);
     const routeBounds = useMemo(
         () => (fitOnChange && points.length ? JSON.stringify(fit(points)) : null),
@@ -55,16 +57,51 @@ export default function TripMap({
         const w = world(p, zoom);
         return [w[0] - left, w[1] - top];
     };
+    const tileZoom = Math.floor(zoom);
+    const tileSize = 256 * 2 ** (zoom - tileZoom);
     const tiles = [];
-    for (let x = Math.floor(left / 256); x <= Math.floor((left + WIDTH) / 256); x++) {
-        for (let y = Math.floor(top / 256); y <= Math.floor((top + HEIGHT) / 256); y++) {
-            if (x >= 0 && y >= 0 && x < 2 ** zoom && y < 2 ** zoom) tiles.push({ x, y });
+    for (let x = Math.floor(left / tileSize); x <= Math.floor((left + WIDTH) / tileSize); x++) {
+        for (let y = Math.floor(top / tileSize); y <= Math.floor((top + HEIGHT) / tileSize); y++) {
+            if (x >= 0 && y >= 0 && x < 2 ** tileZoom && y < 2 ** tileZoom) tiles.push({ x, y });
         }
     }
     function pan(dx, dy) {
         setView({ center: coordinates(origin[0] + dx, origin[1] + dy, zoom), zoom });
     }
+    function startPointer(event) {
+        if (event.button !== 0 || touches.current.size >= 2) return;
+        event.preventDefault();
+        touches.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        event.currentTarget.setPointerCapture(event.pointerId);
+        const bounds = event.currentTarget.getBoundingClientRect();
+        if (touches.current.size === 2) {
+            pointer.current = null;
+            pinch.current = { points: [...touches.current.values()], view, bounds };
+            setDragging(true);
+        } else {
+            pointer.current = {
+                x: event.clientX,
+                y: event.clientY,
+                id: event.pointerId,
+                origin,
+                zoom,
+                width: bounds.width,
+                height: bounds.height,
+                left: bounds.left,
+                top: bounds.top,
+                moved: false,
+            };
+        }
+    }
     function movePointer(event) {
+        if (!touches.current.has(event.pointerId)) return;
+        touches.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        if (pinch.current) {
+            if (touches.current.size === 2) {
+                setView(pinchView(pinch.current, [...touches.current.values()]));
+            }
+            return;
+        }
         if (!pointer.current || pointer.current.id !== event.pointerId) return;
         const result = dragView(pointer.current, event.clientX, event.clientY);
         pointer.current.moved = result.moved;
@@ -74,12 +111,22 @@ export default function TripMap({
         }
     }
     function release(event) {
+        if (!touches.current.has(event.pointerId)) return;
+        if (event.type === 'pointerup') movePointer(event);
+        touches.current.delete(event.pointerId);
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+            event.currentTarget.releasePointerCapture(event.pointerId);
+        }
+        if (pinch.current || event.type !== 'pointerup') {
+            pointer.current = null;
+            if (!touches.current.size) pinch.current = null;
+            setDragging(false);
+            return;
+        }
         if (!pointer.current || pointer.current.id !== event.pointerId) return;
-        movePointer(event);
         const gesture = pointer.current;
         pointer.current = null;
         setDragging(false);
-        event.currentTarget.releasePointerCapture(event.pointerId);
         if (!gesture.moved && onAdd) {
             onAdd(
                 coordinates(
@@ -98,7 +145,7 @@ export default function TripMap({
                     variant="secondary"
                     aria-label="Zoom in"
                     disabled={zoom >= 18}
-                    onClick={() => setView({ center, zoom: zoom + 1 })}
+                    onClick={() => setView({ center, zoom: Math.min(18, zoom + 1) })}
                 >
                     +
                 </Button>
@@ -107,7 +154,7 @@ export default function TripMap({
                     variant="secondary"
                     aria-label="Zoom out"
                     disabled={zoom <= 3}
-                    onClick={() => setView({ center, zoom: zoom - 1 })}
+                    onClick={() => setView({ center, zoom: Math.max(3, zoom - 1) })}
                 >
                     −
                 </Button>
@@ -144,52 +191,29 @@ export default function TripMap({
                 role="img"
                 aria-label={
                     onAdd
-                        ? `Route editor. ${selectionHint}. Coordinate entry is available.`
+                        ? `Route editor. ${selectionHint}. Pinch to zoom. Coordinate entry is available.`
                         : 'Group map showing the planned route, checkpoints, and participant locations.'
                 }
-                onPointerDown={(event) => {
-                    if (!event.isPrimary || event.button !== 0 || pointer.current) return;
-                    event.preventDefault();
-                    const bounds = event.currentTarget.getBoundingClientRect();
-                    pointer.current = {
-                        x: event.clientX,
-                        y: event.clientY,
-                        id: event.pointerId,
-                        origin,
-                        zoom,
-                        width: bounds.width,
-                        height: bounds.height,
-                        left: bounds.left,
-                        top: bounds.top,
-                        moved: false,
-                    };
-                    event.currentTarget.setPointerCapture(event.pointerId);
-                }}
+                onPointerDown={startPointer}
                 onPointerMove={movePointer}
                 onPointerUp={release}
-                onPointerCancel={() => {
-                    pointer.current = null;
-                    setDragging(false);
-                }}
-                onLostPointerCapture={() => {
-                    pointer.current = null;
-                    setDragging(false);
-                }}
+                onPointerCancel={release}
+                onLostPointerCapture={release}
             >
                 {tiles.map(({ x, y }) => (
                     <foreignObject
-                        key={`${zoom}/${x}/${y}`}
-                        x={x * 256 - left}
-                        y={y * 256 - top}
-                        width="256"
-                        height="256"
+                        key={`${tileZoom}/${x}/${y}`}
+                        x={x * tileSize - left}
+                        y={y * tileSize - top}
+                        width={tileSize}
+                        height={tileSize}
                     >
                         <img
-                            src={`https://tile.openstreetmap.org/${zoom}/${x}/${y}.png`}
+                            src={`https://tile.openstreetmap.org/${tileZoom}/${x}/${y}.png`}
                             alt=""
                             draggable={false}
-                            width="256"
-                            height="256"
+                            width={tileSize}
+                            height={tileSize}
                             onError={() => setTileError(true)}
                         />
                     </foreignObject>
@@ -287,7 +311,7 @@ export default function TripMap({
                     })}
             </svg>
             <div className="flex flex-wrap justify-between gap-2 px-3 py-2 text-xs text-[var(--text-muted)]">
-                <span>{onAdd ? selectionHint : 'Drag to pan · Grey markers need attention'}</span>
+                <span>{onAdd ? selectionHint : 'Drag to pan · Grey markers need attention'} · Pinch to zoom</span>
                 <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">
                     © OpenStreetMap contributors
                 </a>
