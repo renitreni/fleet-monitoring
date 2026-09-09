@@ -60,4 +60,22 @@ class RegistrationTest extends TestCase
         $this->assertNotNull($user);
         $this->assertNotNull($user->email_verified_at);
     }
+
+    public function test_registration_rejects_a_display_name_that_is_already_taken(): void
+    {
+        User::factory()->create(['name' => 'Road Runner']);
+
+        $this->post('/register', [
+            'name' => 'road runner',
+            'email' => 'another@example.com',
+            'country' => 'US',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ])->assertSessionHasErrors([
+            'name' => 'That display name is already taken.',
+        ]);
+
+        $this->assertGuest();
+        $this->assertDatabaseMissing('users', ['email' => 'another@example.com']);
+    }
 }

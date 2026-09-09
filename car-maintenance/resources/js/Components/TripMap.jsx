@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Button from '@/Components/Button';
-import { WIDTH, HEIGHT, world, coordinates, dragView, pinchView } from '@/lib/tripMap';
+import { usePage } from '@inertiajs/react';
+import { WIDTH, HEIGHT, world, coordinates, dragView, pinchView, selectMapDesign } from '@/lib/tripMap';
 
 function fit(points) {
     if (!points.length) return { center: { latitude: 14.5995, longitude: 120.9842 }, zoom: 12 };
@@ -36,6 +37,9 @@ export default function TripMap({
     focusLabel = 'Go to coordinates',
     resumePoint,
 }) {
+    const { mapDesigns } = usePage().props;
+    const [selectedDesign, setSelectedDesign] = useState(null);
+    const design = selectMapDesign(mapDesigns, selectedDesign);
     const [view, setView] = useState(() => fit(points));
     const [tileError, setTileError] = useState(false);
     const pointer = useRef(null);
@@ -166,6 +170,20 @@ export default function TripMap({
                         {focusLabel}
                     </Button>
                 )}
+                <label className="flex items-center gap-2 text-sm">
+                    Map design
+                    <select
+                        value={design.id}
+                        onChange={(event) => setSelectedDesign(event.target.value)}
+                        className="border border-[var(--border)] bg-[var(--surface)] px-3 py-2"
+                    >
+                        {mapDesigns.designs.map((option) => (
+                            <option key={option.id} value={option.id}>
+                                {option.name}
+                            </option>
+                        ))}
+                    </select>
+                </label>
                 <div className="ml-auto flex gap-1">
                     {[
                         [0, -120, '↑', 'north'],
@@ -210,6 +228,7 @@ export default function TripMap({
                     >
                         <img
                             src={`https://tile.openstreetmap.org/${tileZoom}/${x}/${y}.png`}
+                            style={{ filter: design.filter }}
                             alt=""
                             draggable={false}
                             width={tileSize}

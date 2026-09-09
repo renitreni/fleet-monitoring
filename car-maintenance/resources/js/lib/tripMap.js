@@ -55,3 +55,11 @@ export function pinchView(gesture, points) {
         ),
     };
 }
+
+export function selectMapDesign(settings, selected) {
+    return (
+        settings.designs.find((design) => design.id === selected) ??
+        settings.designs.find((design) => design.id === settings.default) ??
+        settings.designs[0]
+    );
+}

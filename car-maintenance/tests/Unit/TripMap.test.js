@@ -82,3 +82,18 @@ for (const [zoom, distance, expected] of [
         assert.ok(Number.isFinite(view.center.longitude));
     });
 }
+
+const { selectMapDesign } = await import('../../resources/js/lib/tripMap.js');
+const designs = [{ id: 'standard' }, { id: 'light' }, { id: 'dark' }];
+
+test('uses the admin default until a user chooses another available design', () => {
+    const settings = { designs, default: 'dark' };
+    assert.equal(selectMapDesign(settings, null).id, 'dark');
+    assert.equal(selectMapDesign(settings, 'light').id, 'light');
+});
+
+test('falls back to the admin default when the selected design is disabled', () => {
+    const settings = { designs: designs.slice(0, 2), default: 'light' };
+    assert.equal(selectMapDesign(settings, 'dark').id, 'light');
+    assert.equal(selectMapDesign(settings, 'unknown').id, 'light');
+});

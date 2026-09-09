@@ -17,7 +17,7 @@ export default function TripLeaderboard({ rows = [], checkpointCount, publicView
                     <tr>
                         <th className="p-4">Rank</th>
                         <th className="p-4">Driver</th>
-                        <th className="p-4">Route progress</th>
+                        <th className="p-4">Route covered</th>
                         <th className="p-4">Checkpoints</th>
                         <th className="p-4">{publicView ? 'Result' : 'Connection'}</th>
                     </tr>

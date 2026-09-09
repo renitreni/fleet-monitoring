@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'email_verified_at', 'password', 'country', 'provider', 'provider_id'])]
+#[Fillable(['name', 'normalized_name', 'email', 'email_verified_at', 'password', 'country', 'provider', 'provider_id'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -30,6 +30,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'is_trip_admin' => 'boolean',
+            'name_change_history' => 'array',
             'password' => 'hashed',
         ];
     }

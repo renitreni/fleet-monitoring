@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\UserNameChanges;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -30,7 +31,7 @@ class SocialAuthController extends Controller
     /**
      * Obtain the user information from the OAuth provider.
      */
-    public function callback(string $provider): RedirectResponse
+    public function callback(string $provider, UserNameChanges $nameChanges): RedirectResponse
     {
         $this->ensureProviderIsAllowed($provider);
 
@@ -59,8 +60,10 @@ class SocialAuthController extends Controller
                     'provider_id' => $socialUser->getId(),
                 ]);
             } else {
+                $name = $nameChanges->availableName($socialUser->getName() ?? $socialUser->getNickname() ?? 'OAuth User');
                 $user = User::create([
-                    'name' => $socialUser->getName() ?? $socialUser->getNickname() ?? 'OAuth User',
+                    'name' => $name,
+                    'normalized_name' => $nameChanges->normalizedName($name),
                     'email' => $socialUser->getEmail(),
                     'country' => 'US',
                     'provider' => $provider,

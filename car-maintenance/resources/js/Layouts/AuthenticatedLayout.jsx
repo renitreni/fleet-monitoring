@@ -102,6 +102,13 @@ export default function AuthenticatedLayout({ title, header, children }) {
                                             </p>
                                         </div>
                                         <div className="p-2">
+                                            <Link
+                                                href="/account"
+                                                onClick={() => setMenuOpen(false)}
+                                                className="block px-3 py-2 text-sm font-semibold hover:bg-[var(--surface-muted)]"
+                                            >
+                                                Account
+                                            </Link>
                                             {items.map((item) => (
                                                 <Link
                                                     key={item.href}

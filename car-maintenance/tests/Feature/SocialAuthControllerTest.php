@@ -56,6 +56,26 @@ class SocialAuthControllerTest extends TestCase
         $this->assertAuthenticated();
     }
 
+    public function test_oauth_callback_adds_a_suffix_when_the_provider_name_is_taken(): void
+    {
+        User::factory()->create(['name' => 'JOHN DOE']);
+        $socialiteUser = $this->mockSocialiteUser([
+            'id' => 'google_unique_name',
+            'name' => 'John Doe',
+            'email' => 'different-john@example.com',
+            'nickname' => 'differentjohn',
+        ]);
+
+        $this->mockSocialiteDriver('google', $socialiteUser);
+
+        $this->get('/auth/google/callback')->assertRedirect(config('fortify.home'));
+        $this->assertDatabaseHas('users', [
+            'email' => 'different-john@example.com',
+            'name' => 'John Doe 2',
+            'normalized_name' => 'john doe 2',
+        ]);
+    }
+
     public function test_oauth_callback_links_existing_user_by_email(): void
     {
         $user = User::factory()->create([

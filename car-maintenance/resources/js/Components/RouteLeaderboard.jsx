@@ -13,7 +13,7 @@ export default function RouteLeaderboard({ rows = [] }) {
                 <caption className="sr-only">Best verified completion time per user. Equal times share a rank.</caption>
                 <thead className="bg-[var(--surface-muted)] text-[10px] uppercase tracking-widest">
                     <tr>
-                        {['Rank', 'Driver', 'Best time', 'Gap to first', 'Completed'].map((label) => (
+                        {['Rank', 'Driver', 'Route covered', 'Best time', 'Gap to first', 'Completed'].map((label) => (
                             <th key={label} className="p-4">
                                 {label}
                             </th>
@@ -27,6 +27,7 @@ export default function RouteLeaderboard({ rows = [] }) {
                                 {String(row.rank).padStart(2, '0')}
                             </td>
                             <td className="p-4 font-bold">{row.name}</td>
+                            <td className="p-4 font-mono">100%</td>
                             <td className="p-4 font-mono">{formatTime(row.elapsed_ms)}</td>
                             <td className="p-4 font-mono text-[var(--text-muted)]">
                                 {row.gap_ms ? `+${formatTime(row.gap_ms)}` : '—'}

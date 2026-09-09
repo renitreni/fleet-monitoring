@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\AccountController;
+use App\Http\Controllers\AdminMapDesignController;
 use App\Http\Controllers\AdminTripController;
 use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\CarMileageController;
@@ -34,6 +36,7 @@ Route::middleware(['guest'])->group(function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/account', [AccountController::class, 'show'])->name('account.show');
 
     Route::resource('cars', CarsController::class);
 
@@ -62,6 +65,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::middleware(['auth', PrivateTripResponse::class])->group(function () {
     Route::post('/routes/{trip}/join', [RouteCatalogController::class, 'join'])->middleware('throttle:10,1')->name('routes.join');
     Route::post('/trips/{trip}/cancel', [TripTrackingController::class, 'cancel'])->name('trips.cancel');
+    Route::put('/admin/map-designs', [AdminMapDesignController::class, 'update'])->name('admin.map-designs.update');
     Route::get('/admin/trips', [AdminTripController::class, 'index'])->name('admin.trips.index');
     Route::post('/admin/trips', [AdminTripController::class, 'store'])->middleware('throttle:10,1')->name('admin.trips.store');
     Route::patch('/admin/trips/{trip}', [AdminTripController::class, 'update'])->name('admin.trips.update');

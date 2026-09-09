@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreTripRequest;
 use App\Models\RouteAttempt;
 use App\Models\Trip;
+use App\Services\MapDesigns;
 use App\Services\RouteProgress;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,7 +15,7 @@ use Inertia\Response;
 
 class AdminTripController extends Controller
 {
-    public function index(): Response
+    public function index(MapDesigns $mapDesigns): Response
     {
         $this->authorize('create', Trip::class);
 
@@ -23,7 +24,7 @@ class AdminTripController extends Controller
             'is_route' => $trip->is_route,
             'route_url' => $trip->is_route ? route('routes.show', $trip) : null,
             'manage_url' => route('admin.trips.update', $trip),
-        ]), 'storeUrl' => route('admin.trips.store')]);
+        ]), 'storeUrl' => route('admin.trips.store'), 'mapDesignSettings' => $mapDesigns->settings(), 'mapDesignCatalog' => MapDesigns::CATALOG, 'mapDesignUpdateUrl' => route('admin.map-designs.update')]);
     }
 
     public function store(StoreTripRequest $request, RouteProgress $geometry): RedirectResponse

@@ -3,6 +3,7 @@
 namespace App\Actions\Fortify;
 
 use App\Models\User;
+use App\Services\UserNameChanges;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -12,6 +13,8 @@ use Laravel\Fortify\Contracts\CreatesNewUsers;
 class CreateNewUser implements CreatesNewUsers
 {
     use PasswordValidationRules;
+
+    public function __construct(private UserNameChanges $nameChanges) {}
 
     /**
      * Validate and create a newly registered user.
@@ -23,7 +26,7 @@ class CreateNewUser implements CreatesNewUsers
     public function create(array $input): User
     {
         Validator::make($input, [
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255', $this->nameChanges->uniqueRule()],
             'email' => [
                 'required',
                 'string',
@@ -36,7 +39,8 @@ class CreateNewUser implements CreatesNewUsers
         ])->validate();
 
         return User::create([
-            'name' => $input['name'],
+            'name' => $this->nameChanges->displayName($input['name']),
+            'normalized_name' => $this->nameChanges->normalizedName($input['name']),
             'email' => $input['email'],
             'country' => $input['country'],
             'password' => Hash::make($input['password']),

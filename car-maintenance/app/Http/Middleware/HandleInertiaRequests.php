@@ -2,7 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\MapDesigns;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -37,6 +39,7 @@ class HandleInertiaRequests extends Middleware
     {
         return [
             ...parent::share($request),
+            'mapDesigns' => Inertia::always(fn () => (new MapDesigns)->available()),
             'auth' => [
                 'user' => $request->user() ? [
                     'id' => $request->user()->id,
