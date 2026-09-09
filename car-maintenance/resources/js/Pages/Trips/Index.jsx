@@ -9,15 +9,15 @@ export default function Index({ trips }) {
             header={
                 <div className="flex flex-wrap items-center justify-between gap-4">
                     <div>
-                        <p className="eyebrow">Together on the road</p>
-                        <h1 className="mt-2 text-3xl font-black uppercase">Your road trips</h1>
+                        <p className="eyebrow">Your courses and history</p>
+                        <h1 className="mt-2 text-3xl font-black uppercase">Your route activity</h1>
                     </div>
                     {user.is_trip_admin && (
                         <Link
                             href="/admin/trips"
                             className="bg-[var(--accent)] px-5 py-3 text-xs font-black uppercase tracking-widest text-white"
                         >
-                            Trip control panel
+                            Add route
                         </Link>
                     )}
                 </div>
@@ -25,15 +25,16 @@ export default function Index({ trips }) {
         >
             <div className="mx-auto max-w-6xl space-y-6 px-5 py-10">
                 <p className="text-[var(--text-muted)]">
-                    Open an invitation from your trip organizer to join. Your maintenance records are always available
-                    in My cars.
+                    <Link href="/routes" className="font-bold text-[var(--accent)]">
+                        Browse routes →
+                    </Link>{' '}
+                    Join a course anytime, or revisit your previous activity below.
                 </p>
                 {!trips.data.length && (
                     <div className="border border-dashed border-[var(--border)] p-12 text-center">
-                        <h2 className="text-xl font-bold">Your next group drive starts here</h2>
+                        <h2 className="text-xl font-bold">Your next route starts here</h2>
                         <p className="mt-3 text-[var(--text-muted)]">
-                            Ask your organizer for an invitation link. Joining never starts location tracking
-                            automatically.
+                            Choose a course from Browse routes. Joining never starts location tracking automatically.
                         </p>
                     </div>
                 )}

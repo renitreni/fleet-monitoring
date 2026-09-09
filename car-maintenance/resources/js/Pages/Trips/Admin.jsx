@@ -16,7 +16,7 @@ export default function Admin({ trips, storeUrl }) {
     const [retry, setRetry] = useState(0);
     const [notice, setNotice] = useState('');
     const [busy, setBusy] = useState(false);
-    const form = useForm({ name: '', description: '', is_public: false, ends_at: '' });
+    const form = useForm({ name: '', description: '' });
     const routeKey = JSON.stringify(endpoints);
     const currentRoute = route?.key === routeKey ? route : null;
     const points = currentRoute?.points ?? [];
@@ -83,7 +83,6 @@ export default function Admin({ trips, storeUrl }) {
         if (!currentRoute || routing) return;
         form.transform((data) => ({
             ...data,
-            ends_at: data.ends_at ? new Date(data.ends_at).toISOString() : '',
             route_points: points.map(({ latitude, longitude }) => ({ latitude, longitude })),
             checkpoints,
         })).post(storeUrl, {
@@ -92,40 +91,31 @@ export default function Admin({ trips, storeUrl }) {
                 setEndpoints({ start: '', end: '' });
                 setSelectedEndpoint('start');
                 setRoute(null);
-                setNotice('Trip created. Copy its invitation from the list below.');
+                setNotice('Route published. Drivers can join from Browse routes.');
             },
         });
     }
     function manage(trip, action, extra = {}) {
         if (
             action === 'close' &&
-            !window.confirm('End this trip for everyone? Tracking and invitations will stop. This cannot be undone.')
-        )
-            return;
-        if (
-            action === 'rotate' &&
-            !window.confirm('Replace this invitation? Previously shared links will stop working.')
+            !window.confirm(
+                'Archive this route? New attempts and active tracking will stop. Existing results will remain.'
+            )
         )
             return;
         setBusy(true);
         router.patch(trip.manage_url, { action, ...extra }, { preserveScroll: true, onFinish: () => setBusy(false) });
     }
-    async function copy(url) {
-        try {
-            await navigator.clipboard.writeText(url);
-            setNotice('Invitation copied.');
-        } catch {
-            setNotice('Copy the invitation from the link field below.');
-        }
-    }
     return (
         <AuthenticatedLayout
-            title="Trip control panel"
+            title="Manage routes"
             header={
                 <div>
                     <p className="eyebrow">Organizer workspace</p>
-                    <h1 className="mt-2 text-3xl font-black uppercase">Trip control panel</h1>
-                    <p className="mt-3 text-sm text-[var(--text-muted)]">Plan the course. Bring the group together.</p>
+                    <h1 className="mt-2 text-3xl font-black uppercase">Manage routes</h1>
+                    <p className="mt-3 text-sm text-[var(--text-muted)]">
+                        Add a course once. Let drivers join anytime.
+                    </p>
                 </div>
             }
         >
@@ -220,9 +210,9 @@ export default function Admin({ trips, storeUrl }) {
                         </p>
                     </div>
                     <div className="space-y-5">
-                        <h2 className="text-xl font-black uppercase">02 / Set up the trip</h2>
+                        <h2 className="text-xl font-black uppercase">Route details</h2>
                         <div>
-                            <Label htmlFor="trip-name">Trip name</Label>
+                            <Label htmlFor="trip-name">Route name</Label>
                             <TextInput
                                 id="trip-name"
                                 required
@@ -244,32 +234,6 @@ export default function Admin({ trips, storeUrl }) {
                                 placeholder="Where to meet and what to bring"
                             />
                         </div>
-                        <div>
-                            <Label htmlFor="ends-at">Trip and invitation end time</Label>
-                            <TextInput
-                                id="ends-at"
-                                type="datetime-local"
-                                required
-                                value={form.data.ends_at}
-                                onChange={(event) => form.setData('ends_at', event.target.value)}
-                                className="border p-3"
-                            />
-                            <p className="mt-2 text-xs text-[var(--text-muted)]">
-                                Your local time. Choose within the next 30 days.
-                            </p>
-                        </div>
-                        <label className="flex items-start gap-3 text-sm">
-                            <input
-                                type="checkbox"
-                                className="mt-1"
-                                checked={form.data.is_public}
-                                onChange={(event) => form.setData('is_public', event.target.checked)}
-                            />
-                            <span>
-                                Feature this trip on the landing page with my account name as route creator. Only
-                                participants who opt in appear on its public leaderboard.
-                            </span>
-                        </label>
                         <div className="border-l-2 border-[var(--accent)] bg-[var(--surface)] p-4 text-sm leading-6 text-[var(--text-muted)]">
                             Start and finish are added automatically. Routes must be between 100 metres and 500
                             kilometres. The course is fixed after creation. Review the map before saving.
@@ -286,19 +250,19 @@ export default function Admin({ trips, storeUrl }) {
                             disabled={!currentRoute || routing}
                             className="w-full justify-center py-4"
                         >
-                            Create trip & invitation
+                            Publish route
                         </Button>
                     </div>
                 </form>
                 <section className="space-y-5 border-t border-[var(--border)] pt-8">
-                    <h2 className="text-2xl font-black uppercase">Manage trips</h2>
+                    <h2 className="text-2xl font-black uppercase">Published routes & legacy trips</h2>
                     {notice && (
                         <p role="status" className="text-sm text-[var(--accent)]">
                             {notice}
                         </p>
                     )}
                     {!trips.data.length && (
-                        <p className="text-[var(--text-muted)]">Your first trip will appear here after creation.</p>
+                        <p className="text-[var(--text-muted)]">Your first route will appear here after publication.</p>
                     )}
                     {trips.data.map((trip) => (
                         <div key={trip.id} className="space-y-4 border border-[var(--border)] bg-[var(--surface)] p-5">
@@ -307,8 +271,12 @@ export default function Admin({ trips, storeUrl }) {
                                     <h3 className="text-xl font-bold">{trip.name}</h3>
                                     <p className="mt-1 text-sm text-[var(--text-muted)]">
                                         By {trip.creator} · {trip.participants_count} joined ·{' '}
-                                        {trip.open ? 'Open' : 'Ended'} ·{' '}
-                                        {trip.is_public ? 'Public leaderboard' : 'Private trip'}
+                                        {trip.open ? 'Open' : 'Archived'} ·{' '}
+                                        {trip.is_route
+                                            ? trip.is_public
+                                                ? 'Published route'
+                                                : 'Hidden route'
+                                            : 'Legacy trip'}
                                     </p>
                                 </div>
                                 <div className="flex flex-wrap gap-2">
@@ -318,7 +286,7 @@ export default function Admin({ trips, storeUrl }) {
                                         disabled={busy}
                                         onClick={() => manage(trip, 'visibility', { is_public: !trip.is_public })}
                                     >
-                                        {trip.is_public ? 'Hide from landing' : 'Feature on landing'}
+                                        {trip.is_public ? 'Hide route' : 'Show route'}
                                     </Button>
                                     {trip.open && (
                                         <Button
@@ -327,35 +295,30 @@ export default function Admin({ trips, storeUrl }) {
                                             disabled={busy}
                                             onClick={() => manage(trip, 'close')}
                                         >
-                                            End trip
+                                            Archive route
                                         </Button>
                                     )}
                                 </div>
                             </div>
-                            {trip.open && (
-                                <div className="flex flex-wrap items-center gap-3">
-                                    <input
-                                        aria-label={`Invitation link for ${trip.name}`}
-                                        readOnly
-                                        value={trip.invite_url}
-                                        onFocus={(event) => event.target.select()}
-                                        className="min-w-48 flex-1 border border-[var(--border)] bg-[var(--background)] p-2 text-sm"
-                                    />
-                                    <Button type="button" variant="secondary" onClick={() => copy(trip.invite_url)}>
-                                        Copy link
-                                    </Button>
-                                    <Link href={trip.invite_url} className="text-sm font-bold text-[var(--accent)]">
-                                        Join trip →
+                            {trip.is_route ? (
+                                trip.is_public ? (
+                                    <Link href={trip.route_url} className="text-sm font-bold text-[var(--accent)]">
+                                        View route & leaderboard →
                                     </Link>
-                                    <button
-                                        type="button"
-                                        disabled={busy}
-                                        onClick={() => manage(trip, 'rotate')}
-                                        className="text-xs underline"
-                                    >
-                                        Replace invitation
-                                    </button>
-                                </div>
+                                ) : (
+                                    <p className="text-sm text-[var(--text-muted)]">
+                                        Hidden from browsing. Show the route to make it available again.
+                                    </p>
+                                )
+                            ) : (
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    disabled={busy}
+                                    onClick={() => manage(trip, 'publish')}
+                                >
+                                    Publish as a new route
+                                </Button>
                             )}
                         </div>
                     ))}

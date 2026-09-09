@@ -6,6 +6,8 @@ import Button from '@/Components/Button';
 import TripMap from '@/Components/TripMap';
 import TripLeaderboard from '@/Components/TripLeaderboard';
 import TripPrivacy from '@/Components/TripPrivacy';
+import RouteLeaderboard from '@/Components/RouteLeaderboard';
+import { formatTime } from '@/lib/routePreview';
 
 const messages = {
     verified: 'Location shared. Your route progress is verified.',
@@ -33,7 +35,15 @@ function stopOnExit(url, token) {
     }).catch(() => {});
 }
 
-export default function Show({ trip, standings, participant, urls }) {
+export default function Show({
+    trip,
+    standings,
+    participant,
+    urls,
+    timedStandings = [],
+    attempts = [],
+    personalBest = null,
+}) {
     const [state, setState] = useState('stopped');
     const [message, setMessage] = useState('Tracking is off. Start when you are ready at the first checkpoint.');
     const [now, setNow] = useState(Date.now());
@@ -42,7 +52,7 @@ export default function Show({ trip, standings, participant, urls }) {
     usePoll(
         5000,
         {
-            only: ['trip', 'standings', 'participant'],
+            only: ['trip', 'standings', 'participant', 'attempts', 'timedStandings', 'personalBest'],
             onSuccess: () => setPollFailed(false),
             onError: () => setPollFailed(true),
             onNetworkError: () => {
@@ -56,7 +66,8 @@ export default function Show({ trip, standings, participant, urls }) {
         },
         { mode: 'rest' }
     );
-    const open = trip.open && now < Date.parse(trip.ends_at);
+    const open = trip.open && (!trip.ends_at || now < Date.parse(trip.ends_at));
+    const activeAttempt = attempts.find((attempt) => ['ready', 'active'].includes(attempt.status));
     const rows = standings.map((row) => ({
         ...row,
         location: open && row.last_seen_at && now - Date.parse(row.last_seen_at) < 86400000 ? row.location : null,
@@ -126,7 +137,11 @@ export default function Show({ trip, standings, participant, urls }) {
         clearLocal();
         const generation = session.current.generation;
         setState('requesting');
-        setMessage('Allow location access in your browser to share your position with this trip.');
+        setMessage(
+            trip.is_route
+                ? 'Allow location access to verify your attempt. Your live position stays private.'
+                : 'Allow location access in your browser to share your position with this trip.'
+        );
         navigator.geolocation.getCurrentPosition(
             async (first) => {
                 if (generation !== session.current.generation) return;
@@ -136,6 +151,7 @@ export default function Show({ trip, standings, participant, urls }) {
                         stopOnExit(urls.stop, response.data.tracking_token);
                         return;
                     }
+                    router.reload({ only: ['participant', 'attempts', 'standings'] });
                     session.current.token = response.data.tracking_token;
                     session.current.lastSent = 0;
                     setState('tracking');
@@ -174,7 +190,9 @@ export default function Show({ trip, standings, participant, urls }) {
                                 session.current.token = null;
                                 setState('stopped');
                             }
-                            router.reload({ only: ['standings', 'participant'] });
+                            router.reload({
+                                only: ['standings', 'participant', 'attempts', 'timedStandings', 'personalBest'],
+                            });
                         } catch (error) {
                             if (generation !== session.current.generation || axios.isCancel(error)) return;
                             setMessage(
@@ -242,16 +260,28 @@ export default function Show({ trip, standings, participant, urls }) {
         setState('stopped');
         router.post(urls.leave);
     }
+    async function cancelAttempt() {
+        clearLocal();
+        session.current.token = null;
+        setState('stopped');
+        try {
+            await axios.post(urls.cancel);
+            setMessage('Attempt cancelled. Start again when you are ready at the start point.');
+            router.reload({ only: ['participant', 'attempts', 'standings'] });
+        } catch {
+            setMessage('Could not cancel the attempt. Retry when connected.');
+        }
+    }
     return (
         <AuthenticatedLayout
             title={trip.name}
             header={
                 <div>
-                    <p className="eyebrow">Group road trip</p>
+                    <p className="eyebrow">{trip.is_route ? 'Your route attempt' : 'Legacy road trip'}</p>
                     <h1 className="mt-2 text-3xl font-black uppercase">{trip.name}</h1>
                     <p className="mt-3 text-sm text-[var(--text-muted)]">
-                        Route by {trip.creator} · {(trip.distance_m / 1000).toFixed(1)} km · Ends{' '}
-                        {new Date(trip.ends_at).toLocaleString()}
+                        Route by {trip.creator} · {(trip.distance_m / 1000).toFixed(1)} km
+                        {trip.ends_at ? ` · Ends ${new Date(trip.ends_at).toLocaleString()}` : ' · Join anytime'}
                     </p>
                 </div>
             }
@@ -261,19 +291,28 @@ export default function Show({ trip, standings, participant, urls }) {
                     <Button
                         type="button"
                         onClick={start}
-                        disabled={!open || participant.completed || state !== 'stopped'}
+                        disabled={!open || (!trip.is_route && participant.completed) || state !== 'stopped'}
                     >
                         {state === 'requesting'
                             ? 'Requesting location…'
                             : state === 'tracking' && open && !participant.completed
                               ? 'Tracking active'
-                              : 'Start tracking'}
+                              : trip.is_route
+                                ? activeAttempt
+                                    ? 'Resume attempt'
+                                    : 'Start attempt'
+                                : 'Start tracking'}
                     </Button>
                     <Button type="button" variant="secondary" onClick={stop}>
-                        Stop tracking
+                        {trip.is_route ? 'Pause tracking' : 'Stop tracking'}
                     </Button>
+                    {trip.is_route && activeAttempt && (
+                        <Button type="button" variant="danger" onClick={cancelAttempt}>
+                            Cancel attempt
+                        </Button>
+                    )}
                     <Button type="button" variant="danger" className="ml-auto" onClick={leave}>
-                        Leave trip
+                        Leave route
                     </Button>
                 </div>
                 <p
@@ -282,15 +321,38 @@ export default function Show({ trip, standings, participant, urls }) {
                     className="border-l-2 border-[var(--accent)] bg-[var(--surface)] p-4 text-sm leading-6"
                 >
                     {!open
-                        ? 'This trip has ended. Location sharing is off.'
+                        ? 'This route is closed. Location sharing is off.'
                         : participant.completed
-                          ? 'All required checkpoints completed. Location sharing is off.'
+                          ? trip.is_route
+                              ? 'Course completed. Your result is saved. You can start another attempt.'
+                              : 'All required checkpoints completed. Location sharing is off.'
                           : message}
                 </p>
                 <p className="text-sm text-[var(--text-muted)]">
                     Keep this page open in the foreground. Locking your phone or switching apps may pause tracking.
                     Updates are marked stale after 30 seconds.
                 </p>
+                {trip.is_route && (
+                    <section className="grid gap-4 sm:grid-cols-2">
+                        <div className="border border-[var(--border)] p-5">
+                            <p className="eyebrow">Current attempt</p>
+                            <p className="mt-2 font-mono text-2xl font-bold">
+                                {activeAttempt?.started_at
+                                    ? formatTime(Math.max(0, now - Date.parse(activeAttempt.started_at)))
+                                    : activeAttempt
+                                      ? 'Waiting for start GPS'
+                                      : 'Ready when you are'}
+                            </p>
+                            <p className="mt-2 text-xs text-[var(--text-muted)]">
+                                Elapsed time includes pauses and stops.
+                            </p>
+                        </div>
+                        <div className="border border-[var(--border)] p-5">
+                            <p className="eyebrow">Personal best</p>
+                            <p className="mt-2 font-mono text-2xl font-bold">{formatTime(personalBest)}</p>
+                        </div>
+                    </section>
+                )}
                 {pollFailed && <p role="alert">Could not refresh the group. Last known positions may be stale.</p>}
                 <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
                     <TripMap
@@ -325,14 +387,45 @@ export default function Show({ trip, standings, participant, urls }) {
                 <section className="space-y-4">
                     <div>
                         <p className="eyebrow">Every checkpoint counts</p>
-                        <h2 className="mt-2 text-2xl font-black uppercase">Trip leaderboard</h2>
+                        <h2 className="mt-2 text-2xl font-black uppercase">
+                            {trip.is_route ? 'Route leaderboard' : 'Trip leaderboard'}
+                        </h2>
                         <p className="mt-2 text-sm text-[var(--text-muted)]">
-                            Verified route progress, then checkpoints. Equal scores share a rank. Speed and arrival time
-                            never affect your standing.
+                            {trip.is_route
+                                ? 'Best verified completion time per driver. Equal times share a rank. Only shared results appear.'
+                                : 'Verified route progress, then checkpoints. Equal scores share a rank.'}
                         </p>
                     </div>
-                    <TripLeaderboard rows={rows} checkpointCount={trip.checkpoints.length} />
+                    {trip.is_route ? (
+                        <RouteLeaderboard rows={timedStandings} />
+                    ) : (
+                        <TripLeaderboard rows={rows} checkpointCount={trip.checkpoints.length} />
+                    )}
                 </section>
+                {trip.is_route && (
+                    <section className="space-y-4">
+                        <h2 className="text-2xl font-black uppercase">Your recent attempts</h2>
+                        <p className="text-sm text-[var(--text-muted)]">
+                            Your latest 20 attempts. Your personal best includes all completed attempts.
+                        </p>
+                        {!attempts.length && <p>No attempts yet. Start when you reach the first checkpoint.</p>}
+                        <ol className="divide-y divide-[var(--border)]">
+                            {attempts.map((attempt) => (
+                                <li key={attempt.id} className="flex flex-wrap justify-between gap-3 py-4 text-sm">
+                                    <span className="capitalize">
+                                        {attempt.status === 'ready' ? 'Waiting for start' : attempt.status} ·{' '}
+                                        {attempt.started_at
+                                            ? new Date(attempt.started_at).toLocaleString()
+                                            : 'Not started'}
+                                    </span>
+                                    <span className="font-mono">
+                                        {attempt.elapsed_ms ? formatTime(attempt.elapsed_ms) : '—'}
+                                    </span>
+                                </li>
+                            ))}
+                        </ol>
+                    </section>
+                )}
                 <label className="flex items-start gap-3 border border-[var(--border)] p-5 text-sm">
                     <input
                         className="mt-1"
@@ -347,11 +440,12 @@ export default function Show({ trip, standings, participant, urls }) {
                         }
                     />
                     <span>
-                        Show my name, initial avatar, and progress on the landing-page leaderboard if the organizer
-                        makes this trip public. My location stays within this trip.
+                        {trip.is_route
+                            ? 'Show my name, best time, and completion date on the public route leaderboard. My live location stays private.'
+                            : 'Show my name and progress on the public trip leaderboard.'}
                     </span>
                 </label>
-                <TripPrivacy />
+                <TripPrivacy isRoute={trip.is_route} />
             </div>
         </AuthenticatedLayout>
     );

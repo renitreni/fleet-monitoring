@@ -8,6 +8,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\NotificationsController;
 use App\Http\Controllers\OilChangesController;
 use App\Http\Controllers\OilSuggestionsController;
+use App\Http\Controllers\RouteCatalogController;
 use App\Http\Controllers\TripController;
 use App\Http\Controllers\TripTrackingController;
 use App\Http\Middleware\PrivateTripResponse;
@@ -17,6 +18,9 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function (TripStandings $standings) {
     return inertia('Welcome', ['publicTrips' => $standings->publicTrips()]);
 });
+
+Route::get('/routes', [RouteCatalogController::class, 'index'])->middleware(PrivateTripResponse::class)->name('routes.index');
+Route::get('/routes/{trip}', [RouteCatalogController::class, 'show'])->middleware(PrivateTripResponse::class)->name('routes.show');
 
 Route::middleware(['guest'])->group(function () {
     Route::get('/login', fn () => inertia('Auth/Login'))->name('login');
@@ -56,6 +60,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 Route::middleware(['auth', PrivateTripResponse::class])->group(function () {
+    Route::post('/routes/{trip}/join', [RouteCatalogController::class, 'join'])->middleware('throttle:10,1')->name('routes.join');
+    Route::post('/trips/{trip}/cancel', [TripTrackingController::class, 'cancel'])->name('trips.cancel');
     Route::get('/admin/trips', [AdminTripController::class, 'index'])->name('admin.trips.index');
     Route::post('/admin/trips', [AdminTripController::class, 'store'])->middleware('throttle:10,1')->name('admin.trips.store');
     Route::patch('/admin/trips/{trip}', [AdminTripController::class, 'update'])->name('admin.trips.update');

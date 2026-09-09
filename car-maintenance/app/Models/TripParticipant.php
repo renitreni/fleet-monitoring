@@ -30,6 +30,11 @@ class TripParticipant extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function attempts(): HasMany
+    {
+        return $this->hasMany(RouteAttempt::class);
+    }
+
     public function locations(): HasMany
     {
         return $this->hasMany(TripLocation::class);

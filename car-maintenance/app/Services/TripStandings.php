@@ -47,6 +47,28 @@ class TripStandings
         })->all();
     }
 
+    public function times(Trip $trip): array
+    {
+        $participants = $trip->participants()->with('user:id,name')->whereNull('left_at')->where('public_consent', true)
+            ->with(['attempts' => fn ($query) => $query->where('status', 'completed')->orderBy('elapsed_ms')->orderBy('finished_at')->orderBy('id')->limit(1)])
+            ->withMin(['attempts' => fn ($query) => $query->where('status', 'completed')], 'elapsed_ms')
+            ->get()->filter(fn ($participant) => $participant->attempts_min_elapsed_ms !== null)
+            ->sortBy([['attempts_min_elapsed_ms', 'asc'], ['id', 'asc']])->values();
+        $best = $participants->first()?->attempts_min_elapsed_ms;
+        $previous = null;
+        $rank = 0;
+
+        return $participants->map(function ($participant, $index) use ($best, &$previous, &$rank) {
+            $time = (int) $participant->attempts_min_elapsed_ms;
+            if ($previous !== $time) {
+                $rank = $index + 1;
+                $previous = $time;
+            }
+
+            return ['id' => $participant->id, 'name' => $participant->user?->name ?? 'Deleted account', 'rank' => $rank, 'elapsed_ms' => $time, 'gap_ms' => $time - $best, 'finished_at' => $participant->attempts->first()?->finished_at?->toIso8601String()];
+        })->all();
+    }
+
     public function publicTrips(): array
     {
         return Trip::query()->where('is_public', true)->with('user:id,name')->latest('id')->limit(6)->get()->map(fn (Trip $trip) => [
@@ -56,7 +78,9 @@ class TripStandings
             'distance_km' => round($trip->distance_m / 1000, 1),
             'checkpoint_count' => count($trip->checkpoints),
             'open' => $trip->isOpen(),
-            'standings' => array_slice($this->rows($trip, true), 0, 10),
+            'is_route' => $trip->is_route, ...($trip->is_route ? ['route_points' => $trip->route_points] : []),
+            'url' => $trip->is_route ? route('routes.show', $trip) : null,
+            'standings' => array_slice($trip->is_route ? $this->times($trip) : $this->rows($trip, true), 0, 10),
         ])->all();
     }
 }

@@ -8,14 +8,18 @@ import ThemeToggle from '@/Components/ThemeToggle';
 const navigation = [
     { label: 'Dashboard', href: '/dashboard' },
     { label: 'My cars', href: '/cars' },
-    { label: 'Road trips', href: '/trips' },
+    { label: 'Browse routes', href: '/routes' },
 ];
 
 export default function AuthenticatedLayout({ title, header, children }) {
     const page = usePage();
     const user = page.props.auth.user;
     const url = page.url;
-    const items = user?.is_trip_admin ? [...navigation, { label: 'Trip admin', href: '/admin/trips' }] : navigation;
+    const items = user?.is_trip_admin
+        ? [...navigation, { label: 'Add route', href: '/admin/trips' }]
+        : user
+          ? navigation
+          : [{ label: 'Browse routes', href: '/routes' }];
     const { post } = useForm();
     const [menuOpen, setMenuOpen] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
@@ -67,51 +71,60 @@ export default function AuthenticatedLayout({ title, header, children }) {
                     </div>
                     <div className="flex items-center gap-2 sm:gap-3">
                         <ThemeToggle />
-                        <NotificationBell />
-                        <div className="relative" ref={menuRef}>
-                            <button
-                                type="button"
-                                onClick={() => setMenuOpen((open) => !open)}
-                                aria-expanded={menuOpen}
-                                className="flex h-10 items-center gap-3 border border-[var(--border)] bg-[var(--surface)] px-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
-                            >
-                                <span className="grid h-7 w-7 place-items-center bg-[var(--accent)] text-[10px] font-black text-white">
-                                    {initials}
-                                </span>
-                                <span className="hidden max-w-36 truncate font-bold sm:block">{user?.name}</span>
-                                <span className="text-[var(--text-muted)]" aria-hidden="true">
-                                    ⌄
-                                </span>
-                            </button>
-                            {menuOpen && (
-                                <div className="absolute right-0 top-full mt-2 w-60 border border-[var(--border)] bg-[var(--surface)] shadow-2xl">
-                                    <div className="border-b border-[var(--border)] px-4 py-4">
-                                        <p className="truncate text-sm font-bold">{user?.name}</p>
-                                        <p className="mt-1 truncate text-xs text-[var(--text-muted)]">{user?.email}</p>
+                        {user && <NotificationBell />}
+                        {!user && (
+                            <Link href="/login" className="px-3 py-2 text-sm font-bold">
+                                Sign in
+                            </Link>
+                        )}
+                        {user && (
+                            <div className="relative" ref={menuRef}>
+                                <button
+                                    type="button"
+                                    onClick={() => setMenuOpen((open) => !open)}
+                                    aria-expanded={menuOpen}
+                                    className="flex h-10 items-center gap-3 border border-[var(--border)] bg-[var(--surface)] px-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                                >
+                                    <span className="grid h-7 w-7 place-items-center bg-[var(--accent)] text-[10px] font-black text-white">
+                                        {initials}
+                                    </span>
+                                    <span className="hidden max-w-36 truncate font-bold sm:block">{user?.name}</span>
+                                    <span className="text-[var(--text-muted)]" aria-hidden="true">
+                                        ⌄
+                                    </span>
+                                </button>
+                                {menuOpen && (
+                                    <div className="absolute right-0 top-full mt-2 w-60 border border-[var(--border)] bg-[var(--surface)] shadow-2xl">
+                                        <div className="border-b border-[var(--border)] px-4 py-4">
+                                            <p className="truncate text-sm font-bold">{user?.name}</p>
+                                            <p className="mt-1 truncate text-xs text-[var(--text-muted)]">
+                                                {user?.email}
+                                            </p>
+                                        </div>
+                                        <div className="p-2">
+                                            {items.map((item) => (
+                                                <Link
+                                                    key={item.href}
+                                                    href={item.href}
+                                                    onClick={() => setMenuOpen(false)}
+                                                    className="block px-3 py-2 text-sm font-semibold hover:bg-[var(--surface-muted)]"
+                                                >
+                                                    {item.label}
+                                                </Link>
+                                            ))}
+                                            <form onSubmit={handleLogout}>
+                                                <button
+                                                    type="submit"
+                                                    className="block w-full px-3 py-2 text-left text-sm font-semibold text-[var(--accent)] hover:bg-[var(--surface-muted)]"
+                                                >
+                                                    Log out
+                                                </button>
+                                            </form>
+                                        </div>
                                     </div>
-                                    <div className="p-2">
-                                        {items.map((item) => (
-                                            <Link
-                                                key={item.href}
-                                                href={item.href}
-                                                onClick={() => setMenuOpen(false)}
-                                                className="block px-3 py-2 text-sm font-semibold hover:bg-[var(--surface-muted)]"
-                                            >
-                                                {item.label}
-                                            </Link>
-                                        ))}
-                                        <form onSubmit={handleLogout}>
-                                            <button
-                                                type="submit"
-                                                className="block w-full px-3 py-2 text-left text-sm font-semibold text-[var(--accent)] hover:bg-[var(--surface-muted)]"
-                                            >
-                                                Log out
-                                            </button>
-                                        </form>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
+                                )}
+                            </div>
+                        )}
                         <button
                             type="button"
                             onClick={() => setMobileOpen((open) => !open)}

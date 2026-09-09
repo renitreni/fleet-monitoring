@@ -1,5 +1,7 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import TripLeaderboard from '@/Components/TripLeaderboard';
+import RoutePreview from '@/Components/RoutePreview';
+import RouteLeaderboard from '@/Components/RouteLeaderboard';
 import BrandLogo from '@/Components/BrandLogo';
 import ThemeToggle from '@/Components/ThemeToggle';
 import { useTheme } from '@/Contexts/ThemeContext';
@@ -310,16 +312,15 @@ export default function Welcome({ publicTrips = [] }) {
                                         Every checkpoint.
                                     </h2>
                                     <p className="mt-5 max-w-2xl text-[var(--text-muted)]">
-                                        Explore community route challenges and the drivers taking them on. Rankings
-                                        celebrate verified progress and ordered checkpoints, with no speed or
-                                        arrival-time advantage.
+                                        Explore published courses, join whenever you are ready, and record your personal
+                                        best. Each route has its own leaderboard.
                                     </p>
                                 </div>
                                 <Link
-                                    href={user ? '/trips' : '/login'}
+                                    href="/routes"
                                     className="bg-[var(--accent)] px-6 py-4 text-xs font-black uppercase tracking-widest text-white"
                                 >
-                                    {user ? 'My road trips' : 'Sign in to join a trip'} →
+                                    Browse routes →
                                 </Link>
                             </div>
                             {!publicTrips.length && (
@@ -343,17 +344,29 @@ export default function Welcome({ publicTrips = [] }) {
                                             {trip.checkpoint_count} required checkpoints
                                         </p>
                                     </div>
-                                    <TripLeaderboard
-                                        rows={trip.standings}
-                                        checkpointCount={trip.checkpoint_count}
-                                        publicView
-                                    />
+                                    {trip.is_route && <RoutePreview points={trip.route_points} name={trip.name} />}
+                                    {trip.is_route ? (
+                                        <>
+                                            <RouteLeaderboard rows={trip.standings} />
+                                            <Link
+                                                href={trip.url}
+                                                className="inline-block font-bold text-[var(--accent)]"
+                                            >
+                                                View route & join in →
+                                            </Link>
+                                        </>
+                                    ) : (
+                                        <TripLeaderboard
+                                            rows={trip.standings}
+                                            checkpointCount={trip.checkpoint_count}
+                                            publicView
+                                        />
+                                    )}
                                 </article>
                             ))}
                             <p className="text-xs leading-6 text-[var(--text-muted)]">
                                 Showing up to six featured routes and ten shared entries per route. Participants choose
-                                whether to appear. Live locations stay private to each trip. Ask the organizer for an
-                                invitation to join.
+                                whether to appear. Browse routes to find a course and join anytime.
                             </p>
                         </div>
                     </section>

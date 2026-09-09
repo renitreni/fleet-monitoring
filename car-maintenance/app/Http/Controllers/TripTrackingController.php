@@ -22,7 +22,15 @@ class TripTrackingController extends Controller
             $trip = Trip::query()->lockForUpdate()->findOrFail($trip->id);
             abort_unless($trip->isOpen(), 409, 'This trip has ended.');
             $participant = $this->participant($trip, $request);
-            abort_if($participant->completed_at, 409, 'You have already completed this trip.');
+            if ($trip->is_route) {
+                $active = $participant->attempts()->whereIn('status', ['ready', 'active'])->latest('id')->first();
+                if (! $active) {
+                    $participant->attempts()->create(['status' => 'ready']);
+                    $participant->forceFill(['progress_m' => 0, 'checkpoints_completed' => 0, 'completed_at' => null, 'last_recorded_at' => null]);
+                }
+            } else {
+                abort_if($participant->completed_at, 409, 'You have already completed this trip.');
+            }
             $token = (string) Str::uuid();
             $participant->forceFill(['tracking' => true, 'tracking_token' => $token, 'continuous' => false, 'last_fix' => null, 'verified_fix' => null, 'last_received_at' => null])->save();
 
@@ -63,7 +71,21 @@ class TripTrackingController extends Controller
                 'accuracy' => (float) $data['accuracy'], 'speed' => isset($data['speed']) ? (float) $data['speed'] : null,
                 'recorded_at' => $recorded->toIso8601String(),
             ];
+            $attempt = $trip->is_route ? $participant->attempts()->whereIn('status', ['ready', 'active'])->latest('id')->first() : null;
+            abort_if($trip->is_route && ! $attempt, 409, 'Start a new attempt first.');
             $status = $progress->advance($trip, $participant, $fix);
+            if ($attempt) {
+                if (! $attempt->started_at && $participant->checkpoints_completed > 0) {
+                    $attempt->started_at = now();
+                    $attempt->status = 'active';
+                }
+                if ($participant->completed_at) {
+                    $attempt->finished_at = now();
+                    $attempt->elapsed_ms = max(1, (int) $attempt->started_at->diffInMilliseconds($attempt->finished_at));
+                    $attempt->status = 'completed';
+                }
+                $attempt->save();
+            }
             $participant->last_recorded_at = $recorded;
             $participant->last_received_at = now();
             // Poor accuracy is recorded for diagnostics but never replaces a usable map marker.
@@ -78,6 +100,20 @@ class TripTrackingController extends Controller
         });
 
         return response()->json($result);
+    }
+
+    public function cancel(Request $request, Trip $trip): JsonResponse
+    {
+        $this->authorize('view', $trip);
+        abort_unless($trip->is_route, 404);
+        DB::transaction(function () use ($request, $trip) {
+            Trip::query()->lockForUpdate()->findOrFail($trip->id);
+            $participant = $this->participant($trip, $request);
+            $participant->attempts()->whereIn('status', ['ready', 'active'])->update(['status' => 'cancelled']);
+            $participant->forceFill(['tracking' => false, 'tracking_token' => null, 'continuous' => false, 'last_fix' => null, 'verified_fix' => null])->save();
+        });
+
+        return response()->json(['cancelled' => true]);
     }
 
     private function participant(Trip $trip, Request $request): TripParticipant

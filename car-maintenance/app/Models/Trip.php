@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['user_id', 'name', 'description', 'route_points', 'checkpoints', 'distance_m', 'invite_token', 'is_public', 'ends_at', 'closed_at'])]
+#[Fillable(['user_id', 'name', 'description', 'route_points', 'checkpoints', 'distance_m', 'invite_token', 'is_public', 'ends_at', 'closed_at', 'is_route'])]
 #[Hidden(['invite_token'])]
 class Trip extends Model
 {
@@ -17,7 +17,7 @@ class Trip extends Model
 
     protected function casts(): array
     {
-        return ['route_points' => 'array', 'checkpoints' => 'array', 'is_public' => 'boolean', 'ends_at' => 'datetime', 'closed_at' => 'datetime', 'distance_m' => 'float'];
+        return ['is_route' => 'boolean', 'route_points' => 'array', 'checkpoints' => 'array', 'is_public' => 'boolean', 'ends_at' => 'datetime', 'closed_at' => 'datetime', 'distance_m' => 'float'];
     }
 
     public function user(): BelongsTo
@@ -32,6 +32,6 @@ class Trip extends Model
 
     public function isOpen(): bool
     {
-        return $this->closed_at === null && $this->ends_at->isFuture();
+        return $this->closed_at === null && ($this->is_route || $this->ends_at?->isFuture());
     }
 }

@@ -19,8 +19,6 @@ class StoreTripRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:120'],
             'description' => ['nullable', 'string', 'max:2000'],
-            'is_public' => ['required', 'boolean'],
-            'ends_at' => ['required', 'date', 'after:now', 'before:'.now()->addDays(30)->toIso8601String()],
             'route_points' => ['required', 'array', 'list', 'min:2', 'max:2000'],
             'route_points.*' => ['required', 'array:latitude,longitude'],
             'route_points.*.latitude' => ['required', 'numeric', 'between:-85,85'],

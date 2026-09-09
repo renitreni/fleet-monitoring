@@ -54,10 +54,13 @@ class TripController extends Controller
         Inertia::encryptHistory();
 
         return inertia('Trips/Show', [
-            'trip' => ['id' => $trip->id, 'name' => $trip->name, 'description' => $trip->description, 'route_points' => $trip->route_points, 'checkpoints' => $trip->checkpoints, 'distance_m' => $trip->distance_m, 'open' => $trip->isOpen(), 'ends_at' => $trip->ends_at->toIso8601String(), 'creator' => $trip->user?->name],
-            'standings' => $standings->rows($trip),
+            'trip' => ['id' => $trip->id, 'name' => $trip->name, 'description' => $trip->description, 'route_points' => $trip->route_points, 'checkpoints' => $trip->checkpoints, 'distance_m' => $trip->distance_m, 'open' => $trip->isOpen(), 'is_route' => $trip->is_route, 'ends_at' => $trip->ends_at?->toIso8601String(), 'creator' => $trip->user?->name],
+            'standings' => $trip->is_route ? array_values(array_filter($standings->rows($trip), fn ($row) => $row['user_id'] === $request->user()->id)) : $standings->rows($trip),
+            'timedStandings' => $trip->is_route ? $standings->times($trip) : [],
+            'attempts' => $trip->is_route ? $participant->attempts()->latest('id')->limit(20)->get(['id', 'status', 'started_at', 'finished_at', 'elapsed_ms']) : [],
+            'personalBest' => $trip->is_route ? $participant->attempts()->where('status', 'completed')->min('elapsed_ms') : null,
             'participant' => ['id' => $participant->id, 'public_consent' => $participant->public_consent, 'completed' => $participant->completed_at !== null, 'resume_point' => $geometry->pointAt($trip->route_points, $participant->progress_m)],
-            'urls' => collect(['start', 'stop', 'location', 'leave', 'consent'])->mapWithKeys(fn ($action) => [$action => route('trips.'.$action, $trip)]),
+            'urls' => collect(['start', 'stop', 'location', 'leave', 'consent', 'cancel'])->mapWithKeys(fn ($action) => [$action => route('trips.'.$action, $trip)]),
         ]);
     }
 
@@ -65,8 +68,10 @@ class TripController extends Controller
     {
         $this->authorize('view', $trip);
         DB::transaction(function () use ($request, $trip) {
+            Trip::query()->lockForUpdate()->findOrFail($trip->id);
             $participant = TripParticipant::where('trip_id', $trip->id)->where('user_id', $request->user()->id)->lockForUpdate()->firstOrFail();
             $participant->forceFill(['left_at' => now(), 'tracking' => false, 'tracking_token' => null, 'last_fix' => null, 'verified_fix' => null, 'continuous' => false, 'public_consent' => false, 'last_received_at' => null, 'last_recorded_at' => null])->save();
+            $participant->attempts()->whereIn('status', ['ready', 'active'])->update(['status' => 'cancelled']);
             $participant->locations()->delete();
         });
 
