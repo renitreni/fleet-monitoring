@@ -6,6 +6,7 @@ import TextInput from '@/Components/TextInput';
 import Label from '@/Components/Label';
 import TripMap from '@/Components/TripMap';
 import { findDrivingRoute, parseEndpoint } from '@/lib/tripRouting';
+import { publishRoute } from '@/lib/publishRoute';
 
 export default function Admin({ trips, storeUrl }) {
     const [endpoints, setEndpoints] = useState({ start: '', end: '' });
@@ -81,11 +82,7 @@ export default function Admin({ trips, storeUrl }) {
     function submit(event) {
         event.preventDefault();
         if (!currentRoute || routing) return;
-        form.transform((data) => ({
-            ...data,
-            route_points: points.map(({ latitude, longitude }) => ({ latitude, longitude })),
-            checkpoints,
-        })).post(storeUrl, {
+        publishRoute(form, storeUrl, points, checkpoints, {
             onSuccess: () => {
                 form.reset();
                 setEndpoints({ start: '', end: '' });
