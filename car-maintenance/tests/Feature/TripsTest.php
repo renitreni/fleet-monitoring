@@ -33,6 +33,24 @@ class TripsTest extends TestCase
         $this->get('/admin/trips')->assertInertia(fn (Assert $page) => $page->component('Trips/Admin')->has('trips.data', 1));
     }
 
+    public function test_route_can_be_saved_with_only_start_and_finish_checkpoints(): void
+    {
+        $data = $this->payload();
+        $data['checkpoints'] = [['name' => 'Start', 'point_index' => 0], ['name' => 'Finish', 'point_index' => 2]];
+
+        $this->actingAs(User::factory()->tripAdmin()->create())
+            ->post('/admin/trips', $data)
+            ->assertRedirect('/admin/trips')
+            ->assertSessionHasNoErrors();
+
+        $trip = Trip::firstOrFail();
+        $this->assertSame($data['route_points'], $trip->route_points);
+        $this->assertCount(2, $trip->checkpoints);
+        $this->assertSame(['Start', 'Finish'], array_column($trip->checkpoints, 'name'));
+        $this->assertSame([0, 2], array_column($trip->checkpoints, 'point_index'));
+        $this->assertEqualsWithDelta(444.78, $trip->checkpoints[1]['distance_m'], 0.1);
+    }
+
     public function test_invalid_checkpoint_order_missing_endpoints_and_bad_routes_are_rejected(): void
     {
         $this->actingAs(User::factory()->tripAdmin()->create());

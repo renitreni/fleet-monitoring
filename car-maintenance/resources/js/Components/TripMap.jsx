@@ -1,20 +1,7 @@
-import { useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Button from '@/Components/Button';
+import { WIDTH, HEIGHT, world, coordinates, dragView } from '@/lib/tripMap';
 
-const WIDTH = 900;
-const HEIGHT = 480;
-function world(point, zoom) {
-    const size = 256 * 2 ** zoom;
-    const sine = Math.sin((Math.max(-85, Math.min(85, point.latitude)) * Math.PI) / 180);
-    return [((point.longitude + 180) / 360) * size, (0.5 - Math.log((1 + sine) / (1 - sine)) / (4 * Math.PI)) * size];
-}
-function coordinates(x, y, zoom) {
-    const size = 256 * 2 ** zoom;
-    return {
-        longitude: Math.max(-180, Math.min(180, (x / size) * 360 - 180)),
-        latitude: Math.max(-85, Math.min(85, (Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / size))) * 180) / Math.PI)),
-    };
-}
 function fit(points) {
     if (!points.length) return { center: { latitude: 14.5995, longitude: 120.9842 }, zoom: 12 };
     const latitudes = points.map((p) => Number(p.latitude));
@@ -41,6 +28,10 @@ export default function TripMap({
     checkpoints = [],
     participants = [],
     onAdd,
+    markers = [],
+    showRoutePoints = true,
+    fitOnChange = false,
+    selectionHint = 'Tap to add a point · Drag to pan',
     focusPoint,
     focusLabel = 'Go to coordinates',
     resumePoint,
@@ -48,6 +39,14 @@ export default function TripMap({
     const [view, setView] = useState(() => fit(points));
     const [tileError, setTileError] = useState(false);
     const pointer = useRef(null);
+    const [dragging, setDragging] = useState(false);
+    const routeBounds = useMemo(
+        () => (fitOnChange && points.length ? JSON.stringify(fit(points)) : null),
+        [fitOnChange, points]
+    );
+    useEffect(() => {
+        if (routeBounds) setView(JSON.parse(routeBounds));
+    }, [routeBounds]);
     const { center, zoom } = view;
     const origin = world(center, zoom);
     const left = origin[0] - WIDTH / 2;
@@ -65,22 +64,31 @@ export default function TripMap({
     function pan(dx, dy) {
         setView({ center: coordinates(origin[0] + dx, origin[1] + dy, zoom), zoom });
     }
+    function movePointer(event) {
+        if (!pointer.current || pointer.current.id !== event.pointerId) return;
+        const result = dragView(pointer.current, event.clientX, event.clientY);
+        pointer.current.moved = result.moved;
+        if (result.moved) {
+            setDragging(true);
+            setView(result.view);
+        }
+    }
     function release(event) {
-        if (!pointer.current) return;
-        const { x, y } = pointer.current;
+        if (!pointer.current || pointer.current.id !== event.pointerId) return;
+        movePointer(event);
+        const gesture = pointer.current;
         pointer.current = null;
-        const bounds = event.currentTarget.getBoundingClientRect();
-        const dx = ((event.clientX - x) * WIDTH) / bounds.width;
-        const dy = ((event.clientY - y) * HEIGHT) / bounds.height;
-        if (Math.hypot(dx, dy) > 5) pan(-dx, -dy);
-        else if (onAdd)
+        setDragging(false);
+        event.currentTarget.releasePointerCapture(event.pointerId);
+        if (!gesture.moved && onAdd) {
             onAdd(
                 coordinates(
-                    left + ((event.clientX - bounds.left) * WIDTH) / bounds.width,
-                    top + ((event.clientY - bounds.top) * HEIGHT) / bounds.height,
-                    zoom
+                    gesture.origin[0] - WIDTH / 2 + ((event.clientX - gesture.left) * WIDTH) / gesture.width,
+                    gesture.origin[1] - HEIGHT / 2 + ((event.clientY - gesture.top) * HEIGHT) / gesture.height,
+                    gesture.zoom
                 )
             );
+        }
     }
     return (
         <div className="overflow-hidden border border-[var(--border)] bg-[var(--surface)]">
@@ -132,20 +140,40 @@ export default function TripMap({
             </div>
             <svg
                 viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-                className="block w-full touch-none bg-slate-100"
+                className={`block w-full touch-none select-none bg-slate-100 ${dragging ? 'cursor-grabbing' : 'cursor-grab'}`}
                 role="img"
                 aria-label={
                     onAdd
-                        ? 'Route editor. Tap to add points; drag to pan. Coordinate entry is available below.'
+                        ? `Route editor. ${selectionHint}. Coordinate entry is available.`
                         : 'Group map showing the planned route, checkpoints, and participant locations.'
                 }
                 onPointerDown={(event) => {
-                    pointer.current = { x: event.clientX, y: event.clientY };
+                    if (!event.isPrimary || event.button !== 0 || pointer.current) return;
+                    event.preventDefault();
+                    const bounds = event.currentTarget.getBoundingClientRect();
+                    pointer.current = {
+                        x: event.clientX,
+                        y: event.clientY,
+                        id: event.pointerId,
+                        origin,
+                        zoom,
+                        width: bounds.width,
+                        height: bounds.height,
+                        left: bounds.left,
+                        top: bounds.top,
+                        moved: false,
+                    };
                     event.currentTarget.setPointerCapture(event.pointerId);
                 }}
+                onPointerMove={movePointer}
                 onPointerUp={release}
                 onPointerCancel={() => {
                     pointer.current = null;
+                    setDragging(false);
+                }}
+                onLostPointerCapture={() => {
+                    pointer.current = null;
+                    setDragging(false);
                 }}
             >
                 {tiles.map(({ x, y }) => (
@@ -179,6 +207,7 @@ export default function TripMap({
                     strokeWidth="4"
                 />
                 {onAdd &&
+                    showRoutePoints &&
                     points.map((p, i) => {
                         const [x, y] = pixel(p);
                         return (
@@ -187,6 +216,18 @@ export default function TripMap({
                             </circle>
                         );
                     })}
+                {markers.map((marker) => {
+                    const [x, y] = pixel(marker);
+                    return (
+                        <g key={marker.label} transform={`translate(${x},${y})`}>
+                            <title>{marker.name}</title>
+                            <circle r="15" fill="#17191c" stroke="white" strokeWidth="3" />
+                            <text textAnchor="middle" dy="5" fontSize="13" fontWeight="bold" fill="white">
+                                {marker.label}
+                            </text>
+                        </g>
+                    );
+                })}
                 {checkpoints.map((checkpoint, i) => {
                     const point = points[checkpoint.point_index];
                     if (!point) return null;
@@ -246,7 +287,7 @@ export default function TripMap({
                     })}
             </svg>
             <div className="flex flex-wrap justify-between gap-2 px-3 py-2 text-xs text-[var(--text-muted)]">
-                <span>{onAdd ? 'Tap to add a point · Drag to pan' : 'Drag to pan · Grey markers need attention'}</span>
+                <span>{onAdd ? selectionHint : 'Drag to pan · Grey markers need attention'}</span>
                 <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">
                     © OpenStreetMap contributors
                 </a>

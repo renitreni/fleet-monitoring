@@ -1,52 +1,86 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, router, useForm } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import Button from '@/Components/Button';
 import TextInput from '@/Components/TextInput';
 import Label from '@/Components/Label';
 import TripMap from '@/Components/TripMap';
+import { findDrivingRoute, parseEndpoint } from '@/lib/tripRouting';
 
 export default function Admin({ trips, storeUrl }) {
-    const [points, setPoints] = useState([]);
-    const [coordinates, setCoordinates] = useState({ latitude: '14.5995', longitude: '120.9842' });
+    const [endpoints, setEndpoints] = useState({ start: '', end: '' });
+    const [selectedEndpoint, setSelectedEndpoint] = useState('start');
+    const [route, setRoute] = useState(null);
+    const [routeError, setRouteError] = useState('');
+    const [routing, setRouting] = useState(false);
+    const [retry, setRetry] = useState(0);
     const [notice, setNotice] = useState('');
     const [busy, setBusy] = useState(false);
     const form = useForm({ name: '', description: '', is_public: false, ends_at: '' });
-    const checkpoints = points.flatMap((point, index) =>
-        index === 0 || index === points.length - 1 || point.required
-            ? [
-                  {
-                      name:
-                          point.name ||
-                          (index === 0 ? 'Start' : index === points.length - 1 ? 'Finish' : `Checkpoint ${index + 1}`),
-                      point_index: index,
-                  },
-              ]
-            : []
-    );
-    const focusPoint = { latitude: Number(coordinates.latitude), longitude: Number(coordinates.longitude) };
-    const validCoordinates =
-        coordinates.latitude !== '' &&
-        coordinates.longitude !== '' &&
-        Number.isFinite(focusPoint.latitude) &&
-        Number.isFinite(focusPoint.longitude) &&
-        Math.abs(focusPoint.latitude) <= 85 &&
-        Math.abs(focusPoint.longitude) <= 180;
-    function add(point) {
-        if (points.length < 2000) setPoints((current) => [...current, { ...point, required: false, name: '' }]);
-    }
-    function move(index, direction) {
-        setPoints((current) => {
-            const copy = [...current];
-            [copy[index], copy[index + direction]] = [copy[index + direction], copy[index]];
-            return copy;
-        });
-    }
-    function change(index, update) {
-        setPoints((current) => current.map((point, i) => (i === index ? { ...point, ...update } : point)));
+    const routeKey = JSON.stringify(endpoints);
+    const currentRoute = route?.key === routeKey ? route : null;
+    const points = currentRoute?.points ?? [];
+    const checkpoints = points.length
+        ? [
+              { name: 'Start', point_index: 0 },
+              { name: 'Finish', point_index: points.length - 1 },
+          ]
+        : [];
+    const start = parseEndpoint(endpoints.start);
+    const end = parseEndpoint(endpoints.end);
+    const endpointMarkers = [
+        ...(start ? [{ ...start, name: 'Start', label: 'S' }] : []),
+        ...(end ? [{ ...end, name: 'Finish', label: 'E' }] : []),
+    ];
+    useEffect(() => {
+        const values = JSON.parse(routeKey);
+        const startPoint = parseEndpoint(values.start);
+        const endPoint = parseEndpoint(values.end);
+        setRoute(null);
+        setRouteError('');
+        if (!startPoint || !endPoint) {
+            setRouting(false);
+            return;
+        }
+        const controller = new AbortController();
+        let active = true;
+        let timeout;
+        setRouting(true);
+        const timer = setTimeout(async () => {
+            timeout = setTimeout(() => {
+                if (!active) return;
+                active = false;
+                controller.abort();
+                setRouting(false);
+                setRouteError('Route calculation timed out. Please retry.');
+            }, 20000);
+            try {
+                const result = await findDrivingRoute(startPoint, endPoint, controller.signal);
+                if (active) setRoute({ ...result, key: routeKey });
+            } catch (error) {
+                if (active) setRouteError(error.message || 'Route calculation failed. Please retry.');
+            } finally {
+                clearTimeout(timeout);
+                if (active) setRouting(false);
+            }
+        }, 800);
+        return () => {
+            active = false;
+            clearTimeout(timer);
+            clearTimeout(timeout);
+            controller.abort();
+        };
+    }, [routeKey, retry]);
+    function selectPoint(point) {
+        setEndpoints((current) => ({
+            ...current,
+            [selectedEndpoint]: `${point.latitude.toFixed(6)}, ${point.longitude.toFixed(6)}`,
+        }));
+        if (selectedEndpoint === 'start') setSelectedEndpoint('end');
     }
     function submit(event) {
         event.preventDefault();
+        if (!currentRoute || routing) return;
         form.transform((data) => ({
             ...data,
             ends_at: data.ends_at ? new Date(data.ends_at).toISOString() : '',
@@ -55,7 +89,9 @@ export default function Admin({ trips, storeUrl }) {
         })).post(storeUrl, {
             onSuccess: () => {
                 form.reset();
-                setPoints([]);
+                setEndpoints({ start: '', end: '' });
+                setSelectedEndpoint('start');
+                setRoute(null);
                 setNotice('Trip created. Copy its invitation from the list below.');
             },
         });
@@ -97,133 +133,91 @@ export default function Admin({ trips, storeUrl }) {
                 <form onSubmit={submit} className="grid gap-8 lg:grid-cols-[1fr_340px]">
                     <div className="space-y-5">
                         <div>
-                            <h2 className="text-xl font-black uppercase">01 / Draw the route</h2>
+                            <h2 className="text-xl font-black uppercase">01 / Choose your route</h2>
                             <p className="mt-2 text-sm leading-6 text-[var(--text-muted)]">
-                                Zoom in and tap along the roads in travel order. Add points at every bend, 10–1,000
-                                metres apart. Lines connect your points directly; there is no automatic road routing.
+                                Enter start and end coordinates, or select each endpoint on the map. The shortest
+                                driving route is highlighted automatically. Drag the map to explore.
                             </p>
                         </div>
+                        {['start', 'end'].map((endpoint) => (
+                            <div key={endpoint} className="flex flex-wrap items-end gap-3">
+                                <div className="min-w-48 flex-1">
+                                    <Label htmlFor={`route-${endpoint}`}>
+                                        {endpoint === 'start' ? 'Start point' : 'Endpoint'}
+                                    </Label>
+                                    <TextInput
+                                        id={`route-${endpoint}`}
+                                        value={endpoints[endpoint]}
+                                        placeholder="Latitude, longitude (e.g. 14.5995, 120.9842)"
+                                        onFocus={() => setSelectedEndpoint(endpoint)}
+                                        onChange={(event) =>
+                                            setEndpoints((current) => ({ ...current, [endpoint]: event.target.value }))
+                                        }
+                                        aria-invalid={Boolean(
+                                            endpoints[endpoint] && !parseEndpoint(endpoints[endpoint])
+                                        )}
+                                        aria-describedby={`route-${endpoint}-help`}
+                                        className="border p-3"
+                                    />
+                                    <p id={`route-${endpoint}-help`} className="mt-1 text-xs text-[var(--text-muted)]">
+                                        {endpoints[endpoint] && !parseEndpoint(endpoints[endpoint])
+                                            ? 'Enter valid latitude and longitude separated by a comma.'
+                                            : 'Latitude first, then longitude.'}
+                                    </p>
+                                </div>
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    aria-pressed={selectedEndpoint === endpoint}
+                                    onClick={() => setSelectedEndpoint(endpoint)}
+                                >
+                                    {selectedEndpoint === endpoint ? 'Selecting on map' : 'Select on map'}
+                                </Button>
+                            </div>
+                        ))}
                         <TripMap
                             points={points}
                             checkpoints={checkpoints}
-                            onAdd={add}
-                            focusPoint={validCoordinates ? focusPoint : null}
+                            markers={currentRoute ? [] : endpointMarkers}
+                            onAdd={selectPoint}
+                            showRoutePoints={false}
+                            fitOnChange
+                            selectionHint={`Tap to set ${selectedEndpoint === 'start' ? 'start point' : 'endpoint'} · Drag to pan`}
+                            focusPoint={selectedEndpoint === 'start' ? start : end}
                         />
-                        <div className="flex flex-wrap items-end gap-3">
-                            <div className="min-w-32 flex-1">
-                                <Label htmlFor="latitude">Latitude</Label>
-                                <TextInput
-                                    id="latitude"
-                                    type="number"
-                                    step="any"
-                                    min="-85"
-                                    max="85"
-                                    value={coordinates.latitude}
-                                    onChange={(event) =>
-                                        setCoordinates({ ...coordinates, latitude: event.target.value })
-                                    }
-                                    className="border p-2"
-                                />
-                            </div>
-                            <div className="min-w-32 flex-1">
-                                <Label htmlFor="longitude">Longitude</Label>
-                                <TextInput
-                                    id="longitude"
-                                    type="number"
-                                    step="any"
-                                    min="-180"
-                                    max="180"
-                                    value={coordinates.longitude}
-                                    onChange={(event) =>
-                                        setCoordinates({ ...coordinates, longitude: event.target.value })
-                                    }
-                                    className="border p-2"
-                                />
-                            </div>
-                            <Button
-                                type="button"
-                                variant="secondary"
-                                disabled={!validCoordinates}
-                                onClick={() => add(focusPoint)}
-                            >
-                                Add coordinates
-                            </Button>
+                        <div role="status" aria-live="polite" className="text-sm text-[var(--text-muted)]">
+                            {routing
+                                ? 'Finding the shortest driving route…'
+                                : currentRoute
+                                  ? `${currentRoute.distanceKm.toFixed(2)} km driving route · Start and finish set automatically`
+                                  : !routeError
+                                    ? 'Set both endpoints to see your route.'
+                                    : ''}
                         </div>
-                        <div className="flex items-center justify-between">
-                            <h3 className="font-bold">
-                                {points.length} route points · {checkpoints.length} checkpoints
-                            </h3>
-                            <Button
-                                type="button"
-                                variant="secondary"
-                                disabled={!points.length}
-                                onClick={() => setPoints((current) => current.slice(0, -1))}
-                            >
-                                Undo last point
-                            </Button>
-                        </div>
-                        <ol className="max-h-96 space-y-2 overflow-y-auto">
-                            {points.map((point, i) => (
-                                <li
-                                    key={i}
-                                    className="flex flex-wrap items-center gap-3 border border-[var(--border)] bg-[var(--surface)] p-3"
+                        {routeError && (
+                            <div role="alert" className="space-y-2 text-sm text-red-600 dark:text-red-400">
+                                <p>{routeError}</p>
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    onClick={() => setRetry((value) => value + 1)}
                                 >
-                                    <span className="w-6 font-mono text-[var(--accent)]">{i + 1}</span>
-                                    <span className="text-xs text-[var(--text-muted)]">
-                                        {point.latitude.toFixed(5)}, {point.longitude.toFixed(5)}
-                                    </span>
-                                    <label className="flex items-center gap-2 text-xs">
-                                        <input
-                                            type="checkbox"
-                                            checked={i === 0 || i === points.length - 1 || point.required}
-                                            disabled={i === 0 || i === points.length - 1}
-                                            onChange={(event) => change(i, { required: event.target.checked })}
-                                        />
-                                        Required checkpoint
-                                    </label>
-                                    <input
-                                        aria-label={`Name for point ${i + 1}`}
-                                        value={point.name}
-                                        maxLength={80}
-                                        placeholder={
-                                            i === 0 ? 'Start' : i === points.length - 1 ? 'Finish' : 'Checkpoint name'
-                                        }
-                                        onChange={(event) => change(i, { name: event.target.value })}
-                                        className="min-w-28 flex-1 border border-[var(--border)] bg-[var(--background)] p-2 text-sm"
-                                    />
-                                    <div className="flex gap-2">
-                                        <button
-                                            type="button"
-                                            aria-label={`Move point ${i + 1} earlier`}
-                                            disabled={i === 0}
-                                            className="px-2 disabled:opacity-30"
-                                            onClick={() => move(i, -1)}
-                                        >
-                                            ↑
-                                        </button>
-                                        <button
-                                            type="button"
-                                            aria-label={`Move point ${i + 1} later`}
-                                            disabled={i === points.length - 1}
-                                            className="px-2 disabled:opacity-30"
-                                            onClick={() => move(i, 1)}
-                                        >
-                                            ↓
-                                        </button>
-                                        <button
-                                            type="button"
-                                            aria-label={`Remove point ${i + 1}`}
-                                            className="px-2 text-[var(--accent)]"
-                                            onClick={() =>
-                                                setPoints((current) => current.filter((_, index) => index !== i))
-                                            }
-                                        >
-                                            ×
-                                        </button>
-                                    </div>
-                                </li>
-                            ))}
-                        </ol>
+                                    Retry route
+                                </Button>
+                            </div>
+                        )}
+                        <p className="text-xs text-[var(--text-muted)]">
+                            Routing by{' '}
+                            <a
+                                className="underline"
+                                href="https://valhalla.openstreetmap.de/"
+                                target="_blank"
+                                rel="noreferrer"
+                            >
+                                Valhalla / FOSSGIS
+                            </a>
+                            . Endpoints snap to nearby roads. An internet connection is required.
+                        </p>
                     </div>
                     <div className="space-y-5">
                         <h2 className="text-xl font-black uppercase">02 / Set up the trip</h2>
@@ -277,8 +271,8 @@ export default function Admin({ trips, storeUrl }) {
                             </span>
                         </label>
                         <div className="border-l-2 border-[var(--accent)] bg-[var(--surface)] p-4 text-sm leading-6 text-[var(--text-muted)]">
-                            Start and finish are always required. Checkpoints must be at least 100 metres apart along
-                            the route. The course is fixed after creation. Review the map before saving.
+                            Start and finish are added automatically. Routes must be between 100 metres and 500
+                            kilometres. The course is fixed after creation. Review the map before saving.
                         </div>
                         {Object.keys(form.errors).length > 0 && (
                             <ul role="alert" className="space-y-2 text-sm text-red-600 dark:text-red-400">
@@ -289,7 +283,7 @@ export default function Admin({ trips, storeUrl }) {
                         )}
                         <Button
                             processing={form.processing}
-                            disabled={points.length < 2}
+                            disabled={!currentRoute || routing}
                             className="w-full justify-center py-4"
                         >
                             Create trip & invitation
