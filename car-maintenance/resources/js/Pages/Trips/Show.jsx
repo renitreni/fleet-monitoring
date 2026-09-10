@@ -7,6 +7,7 @@ import TripMap from '@/Components/TripMap';
 import TripLeaderboard from '@/Components/TripLeaderboard';
 import TripPrivacy from '@/Components/TripPrivacy';
 import RouteLeaderboard from '@/Components/RouteLeaderboard';
+import RouteCompletionNotice from '@/Components/RouteCompletionNotice';
 import { formatTime } from '@/lib/routePreview';
 
 const messages = {
@@ -48,6 +49,8 @@ export default function Show({
     const [message, setMessage] = useState('Tracking is off. Start when you are ready at the first checkpoint.');
     const [now, setNow] = useState(Date.now());
     const [pollFailed, setPollFailed] = useState(false);
+    const [showCompletion, setShowCompletion] = useState(false);
+    const previouslyCompleted = useRef(participant.completed);
     const session = useRef({ generation: 0, watch: null, token: null, pending: null, lastSent: 0 });
     usePoll(
         5000,
@@ -109,6 +112,11 @@ export default function Show({
         };
     }, [urls.stop]);
     useEffect(() => {
+        if (participant.completed && !previouslyCompleted.current) {
+            setShowCompletion(true);
+            setState('stopped');
+        }
+        previouslyCompleted.current = participant.completed;
         if (!open || participant.completed) {
             clearLocal();
             session.current.token = null;
@@ -154,6 +162,7 @@ export default function Show({
                     router.reload({ only: ['participant', 'attempts', 'standings'] });
                     session.current.token = response.data.tracking_token;
                     session.current.lastSent = 0;
+                    setShowCompletion(false);
                     setState('tracking');
                     const upload = async (position) => {
                         if (
@@ -186,6 +195,7 @@ export default function Show({
                                     : messages[result.data.status] || 'Location updated.'
                             );
                             if (result.data.completed) {
+                                setShowCompletion(true);
                                 clearLocal();
                                 session.current.token = null;
                                 setState('stopped');
@@ -286,6 +296,7 @@ export default function Show({
                 </div>
             }
         >
+            {showCompletion && <RouteCompletionNotice />}
             <div className="mx-auto max-w-[1384px] space-y-7 px-5 py-8 sm:px-8">
                 <div className="flex flex-wrap items-center gap-3">
                     <Button

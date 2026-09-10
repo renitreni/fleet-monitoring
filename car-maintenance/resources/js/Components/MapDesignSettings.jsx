@@ -19,9 +19,10 @@ export default function MapDesignSettings({ settings, catalog, updateUrl }) {
     return (
         <form onSubmit={submit} className="space-y-5 border border-[var(--border)] bg-[var(--surface)] p-5">
             <div>
-                <h2 className="text-xl font-black uppercase">Map designs</h2>
+                <h2 className="text-xl font-black uppercase">Available map designs</h2>
                 <p className="mt-2 text-sm text-[var(--text-muted)]">
-                    Choose which themes everyone can use on route and trip maps. Changes apply on their next refresh.
+                    Choose which designs everyone can use on route and trip maps, then set the global default. Changes
+                    apply on their next refresh.
                 </p>
             </div>
             <fieldset disabled={form.processing} className="grid gap-3 sm:grid-cols-3">
@@ -65,10 +66,10 @@ export default function MapDesignSettings({ settings, catalog, updateUrl }) {
                 </p>
             ))}
             <div className="flex items-center gap-3">
-                <Button disabled={form.processing}>{form.processing ? 'Saving…' : 'Save map designs'}</Button>
+                <Button disabled={form.processing}>{form.processing ? 'Saving…' : 'Save map settings'}</Button>
                 {form.recentlySuccessful && (
                     <p role="status" className="text-sm">
-                        Map designs saved.
+                        Map settings saved.
                     </p>
                 )}
             </div>

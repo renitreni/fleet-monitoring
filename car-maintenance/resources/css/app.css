@@ -1,5 +1,31 @@
 @import 'tailwindcss';
 
+@keyframes route-completion-enter {
+    from { opacity: 0; transform: translateY(-16px) scale(0.96); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes route-completion-check {
+    from { stroke-dashoffset: 1; }
+    to { stroke-dashoffset: 0; }
+}
+
+@keyframes route-completion-ring {
+    50% { transform: scale(1.08); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .route-completion { animation: route-completion-enter 450ms ease-out both; }
+    .route-completion-check {
+        stroke-dasharray: 1;
+        animation: route-completion-check 650ms ease-out 300ms both;
+    }
+    .route-completion-ring {
+        transform-origin: center;
+        animation: route-completion-ring 1600ms ease-in-out 3;
+    }
+}
+
 @custom-variant dark (&:where(.dark, .dark *));
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';

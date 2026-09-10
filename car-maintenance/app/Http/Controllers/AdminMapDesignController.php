@@ -8,9 +8,21 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Inertia\Response;
 
 class AdminMapDesignController extends Controller
 {
+    public function show(MapDesigns $mapDesigns): Response
+    {
+        $this->authorize('create', Trip::class);
+
+        return inertia('MapSettings/Show', [
+            'settings' => $mapDesigns->settings(),
+            'catalog' => MapDesigns::CATALOG,
+            'updateUrl' => route('admin.map-settings.update'),
+        ]);
+    }
+
     public function update(Request $request): RedirectResponse
     {
         $this->authorize('create', Trip::class);
@@ -29,6 +41,6 @@ class AdminMapDesignController extends Controller
             'default_design' => $data['default'],
         ], ['id'], ['enabled', 'default_design']);
 
-        return redirect()->route('admin.trips.index')->with('success', 'Map designs updated.');
+        return redirect()->route('admin.map-settings.show')->with('success', 'Map settings updated.');
     }
 }

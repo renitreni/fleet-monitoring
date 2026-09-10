@@ -5,11 +5,10 @@ import Button from '@/Components/Button';
 import TextInput from '@/Components/TextInput';
 import Label from '@/Components/Label';
 import TripMap from '@/Components/TripMap';
-import MapDesignSettings from '@/Components/MapDesignSettings';
 import { findDrivingRoute, parseEndpoint } from '@/lib/tripRouting';
 import { publishRoute } from '@/lib/publishRoute';
 
-export default function Admin({ trips, storeUrl, mapDesignSettings, mapDesignCatalog, mapDesignUpdateUrl }) {
+export default function Admin({ trips, storeUrl }) {
     const [endpoints, setEndpoints] = useState({ start: '', end: '' });
     const [selectedEndpoint, setSelectedEndpoint] = useState('start');
     const [route, setRoute] = useState(null);
@@ -118,11 +117,6 @@ export default function Admin({ trips, storeUrl, mapDesignSettings, mapDesignCat
             }
         >
             <div className="mx-auto max-w-[1384px] space-y-10 px-5 py-8 sm:px-8">
-                <MapDesignSettings
-                    settings={mapDesignSettings}
-                    catalog={mapDesignCatalog}
-                    updateUrl={mapDesignUpdateUrl}
-                />
                 <form onSubmit={submit} className="grid gap-8 lg:grid-cols-[1fr_340px]">
                     <div className="space-y-5">
                         <div>

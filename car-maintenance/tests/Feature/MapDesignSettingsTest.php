@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
@@ -12,25 +13,31 @@ class MapDesignSettingsTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_only_admins_can_change_map_designs(): void
+    public function test_only_admins_can_open_and_change_map_settings(): void
     {
         $payload = ['enabled' => ['dark'], 'default' => 'dark'];
-        $this->put('/admin/map-designs', $payload)->assertRedirect('/login');
-        $this->actingAs(User::factory()->create())->put('/admin/map-designs', $payload)->assertForbidden();
+        $this->get('/admin/map-settings')->assertRedirect('/login');
+        $this->put('/admin/map-settings', $payload)->assertRedirect('/login');
+        $this->actingAs(User::factory()->create())->get('/admin/map-settings')->assertForbidden();
+        $this->put('/admin/map-settings', $payload)->assertForbidden();
         $this->assertDatabaseCount('map_design_settings', 0);
     }
 
     public function test_admin_sees_initial_designs_and_can_save_settings_for_everyone(): void
     {
         $this->actingAs(User::factory()->tripAdmin()->create());
-        $this->get('/admin/trips')->assertInertia(fn (Assert $page) => $page
-            ->where('mapDesignSettings.enabled', ['standard', 'light', 'dark'])
-            ->where('mapDesignSettings.default', 'standard')
-            ->has('mapDesignCatalog', 3));
+        $this->get('/admin/map-settings')->assertInertia(fn (Assert $page) => $page
+            ->component('MapSettings/Show')
+            ->where('settings.enabled', ['standard', 'light', 'dark'])
+            ->where('settings.default', 'standard')
+            ->has('catalog', 3)
+            ->where('updateUrl', route('admin.map-settings.update')));
 
-        $this->put('/admin/map-designs', ['enabled' => ['light', 'dark'], 'default' => 'dark'])
-            ->assertRedirect('/admin/trips')->assertSessionHasNoErrors();
-        $this->assertDatabaseHas('map_design_settings', ['id' => 1, 'default_design' => 'dark', 'enabled' => '["light","dark"]']);
+        $this->put('/admin/map-settings', ['enabled' => ['light', 'dark'], 'default' => 'dark'])
+            ->assertRedirect('/admin/map-settings')->assertSessionHasNoErrors();
+        $settings = DB::table('map_design_settings')->find(1);
+        $this->assertSame('dark', $settings->default_design);
+        $this->assertSame(['light', 'dark'], json_decode($settings->enabled, true));
         $this->actingAs(User::factory()->create())->get('/routes')->assertInertia(fn (Assert $page) => $page
             ->where('mapDesigns.default', 'dark')
             ->has('mapDesigns.designs', 2)
@@ -41,8 +48,8 @@ class MapDesignSettingsTest extends TestCase
     public function test_admin_can_replace_settings_and_public_maps_use_the_saved_default(): void
     {
         $this->actingAs(User::factory()->tripAdmin()->create());
-        $this->put('/admin/map-designs', ['enabled' => ['light', 'dark'], 'default' => 'dark'])->assertSessionHasNoErrors();
-        $this->put('/admin/map-designs', ['enabled' => ['standard'], 'default' => 'standard'])->assertSessionHasNoErrors();
+        $this->put('/admin/map-settings', ['enabled' => ['light', 'dark'], 'default' => 'dark'])->assertSessionHasNoErrors();
+        $this->put('/admin/map-settings', ['enabled' => ['standard'], 'default' => 'standard'])->assertSessionHasNoErrors();
         $this->assertDatabaseCount('map_design_settings', 1);
         $this->app['auth']->forgetGuards();
         $this->get('/routes')->assertInertia(fn (Assert $page) => $page
@@ -56,11 +63,13 @@ class MapDesignSettingsTest extends TestCase
     public function test_invalid_settings_are_rejected_without_changing_saved_settings(array $payload, string $field): void
     {
         $this->actingAs(User::factory()->tripAdmin()->create());
-        $this->put('/admin/map-designs', ['enabled' => ['standard'], 'default' => 'standard'])->assertSessionHasNoErrors();
+        $this->put('/admin/map-settings', ['enabled' => ['standard'], 'default' => 'standard'])->assertSessionHasNoErrors();
 
-        $this->put('/admin/map-designs', $payload)->assertSessionHasErrors($field);
+        $this->put('/admin/map-settings', $payload)->assertSessionHasErrors($field);
 
-        $this->assertDatabaseHas('map_design_settings', ['id' => 1, 'default_design' => 'standard', 'enabled' => '["standard"]']);
+        $settings = DB::table('map_design_settings')->find(1);
+        $this->assertSame('standard', $settings->default_design);
+        $this->assertSame(['standard'], json_decode($settings->enabled, true));
     }
 
     public static function invalidSettings(): array

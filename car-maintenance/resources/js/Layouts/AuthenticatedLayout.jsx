@@ -109,6 +109,15 @@ export default function AuthenticatedLayout({ title, header, children }) {
                                             >
                                                 Account
                                             </Link>
+                                            {user.is_trip_admin && (
+                                                <Link
+                                                    href="/admin/map-settings"
+                                                    onClick={() => setMenuOpen(false)}
+                                                    className="block px-3 py-2 text-sm font-semibold hover:bg-[var(--surface-muted)]"
+                                                >
+                                                    Map settings
+                                                </Link>
+                                            )}
                                             {items.map((item) => (
                                                 <Link
                                                     key={item.href}
