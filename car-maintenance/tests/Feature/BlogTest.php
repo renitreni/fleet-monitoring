@@ -50,6 +50,28 @@ class BlogTest extends TestCase
                 ->where('preview', false));
     }
 
+    public function test_landing_page_lists_the_three_latest_published_posts_only(): void
+    {
+        $this->freezeTime();
+        $latest = BlogPost::factory()->published()->create(['title' => 'Latest article', 'published_at' => now()->subHour()]);
+        $second = BlogPost::factory()->published()->create(['title' => 'Second article', 'published_at' => now()->subHours(2)]);
+        $third = BlogPost::factory()->published()->create(['title' => 'Third article', 'published_at' => now()->subHours(3)]);
+        BlogPost::factory()->published()->create(['title' => 'Older article', 'published_at' => now()->subHours(4)]);
+        BlogPost::factory()->create(['title' => 'Draft article']);
+        BlogPost::factory()->published()->create(['title' => 'Future article', 'published_at' => now()->addHour()]);
+
+        $this->get(route('home'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Welcome')
+                ->has('recentPosts', 3)
+                ->where('recentPosts.0.title', $latest->title)
+                ->where('recentPosts.0.url', route('blog.show', $latest->slug))
+                ->where('recentPosts.1.title', $second->title)
+                ->where('recentPosts.2.title', $third->title)
+                ->missing('recentPosts.0.body_html')
+                ->missing('recentPosts.0.body_markdown'));
+    }
+
     public function test_unpublished_posts_return_not_found_to_the_public(): void
     {
         $draft = BlogPost::factory()->create();

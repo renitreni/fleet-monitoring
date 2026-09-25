@@ -20,7 +20,7 @@ class RouteCatalogController extends Controller
             'filter' => ['nullable', 'in:all,joined'],
         ]);
         $sort = $filters['sort'] ?? 'newest';
-        $filter = $filters['filter'] ?? 'all';
+        $filter = $request->user() ? ($filters['filter'] ?? 'all') : 'all';
         $query = Trip::where('is_route', true)->where('is_public', true)
             ->when($filter !== 'joined', fn ($query) => $query->whereNull('closed_at'))
             ->withCount(['participants' => fn ($query) => $query->whereNull('left_at')])

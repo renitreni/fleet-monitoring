@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AccountPasswordController;
+use App\Http\Controllers\AdminAnalyticsController;
 use App\Http\Controllers\AdminBlogPostController;
 use App\Http\Controllers\AdminMapDesignController;
 use App\Http\Controllers\AdminTripController;
@@ -17,12 +18,33 @@ use App\Http\Controllers\RouteCatalogController;
 use App\Http\Controllers\TripController;
 use App\Http\Controllers\TripTrackingController;
 use App\Http\Middleware\PrivateTripResponse;
+use App\Models\BlogPost;
 use App\Services\TripStandings;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function (TripStandings $standings) {
-    return inertia('Welcome', ['publicTrips' => $standings->publicTrips()]);
-});
+    $recentPosts = BlogPost::query()
+        ->published()
+        ->with('author:id,name')
+        ->orderByDesc('published_at')
+        ->orderByDesc('id')
+        ->limit(3)
+        ->get()
+        ->map(fn (BlogPost $post): array => [
+            'title' => $post->title,
+            'slug' => $post->slug,
+            'excerpt' => $post->excerpt,
+            'author' => $post->author->name,
+            'published_at' => $post->published_at->toIso8601String(),
+            'reading_time' => $post->readingTimeMinutes(),
+            'url' => route('blog.show', $post->slug),
+        ]);
+
+    return inertia('Welcome', [
+        'publicTrips' => $standings->publicTrips(),
+        'recentPosts' => $recentPosts,
+    ]);
+})->name('home');
 
 Route::get('/routes', [RouteCatalogController::class, 'index'])->middleware(PrivateTripResponse::class)->name('routes.index');
 Route::get('/routes/{trip}', [RouteCatalogController::class, 'show'])->middleware(PrivateTripResponse::class)->name('routes.show');
@@ -43,6 +65,7 @@ Route::middleware(['guest'])->group(function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/admin/analytics', [AdminAnalyticsController::class, 'index'])->name('admin.analytics.index');
     Route::get('/account', [AccountController::class, 'show'])->middleware(PrivateTripResponse::class)->name('account.show');
     Route::post('/account/password/email', [AccountPasswordController::class, 'store'])->middleware('throttle:5,1')->name('account.password.email');
     Route::put('/account/password', [AccountPasswordController::class, 'update'])->middleware('throttle:5,1')->name('account.password.update');

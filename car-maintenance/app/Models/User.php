@@ -29,6 +29,7 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'is_analytics_admin' => 'boolean',
             'is_blog_admin' => 'boolean',
             'is_trip_admin' => 'boolean',
             'name_change_history' => 'array',

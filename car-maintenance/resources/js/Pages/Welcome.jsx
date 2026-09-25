@@ -18,7 +18,11 @@ const StatusIcon = ({ children }) => (
     </span>
 );
 
-export default function Welcome({ publicTrips = [] }) {
+function formatDate(value) {
+    return new Intl.DateTimeFormat(undefined, { dateStyle: 'long' }).format(new Date(value));
+}
+
+export default function Welcome({ publicTrips = [], recentPosts = [] }) {
     const user = usePage().props.auth?.user;
     const { theme } = useTheme();
 
@@ -47,11 +51,14 @@ export default function Welcome({ publicTrips = [] }) {
                             <a href="#road-trips" className="transition hover:text-white">
                                 Road trips
                             </a>
+                            <a href="#journal" className="transition hover:text-white">
+                                Journal
+                            </a>
                             <a href="#garage" className="transition hover:text-white">
                                 Your garage
                             </a>
-                            <Link href="/blog" className="transition hover:text-white">
-                                Blog
+                            <Link href="/routes" className="transition hover:text-white">
+                                Browse routes
                             </Link>
                         </div>
                         <div className="flex items-center gap-4">
@@ -374,6 +381,70 @@ export default function Welcome({ publicTrips = [] }) {
                         </div>
                     </section>
 
+                    <section
+                        id="journal"
+                        className="border-b border-[var(--border)] px-5 py-20 sm:px-8 lg:px-12 lg:py-28"
+                    >
+                        <div className="mx-auto max-w-[1384px]">
+                            <div className="flex flex-wrap items-end justify-between gap-6">
+                                <div>
+                                    <p className="eyebrow">Motologic journal</p>
+                                    <h2 className="mt-5 text-4xl font-black uppercase tracking-tight sm:text-6xl">
+                                        Know more.
+                                        <br />
+                                        Drive smarter.
+                                    </h2>
+                                    <p className="mt-5 max-w-2xl text-[var(--text-muted)]">
+                                        Practical maintenance guides, ownership advice, and ideas for the road ahead.
+                                    </p>
+                                </div>
+                                <Link
+                                    href="/blog"
+                                    className="border border-[var(--border)] px-6 py-4 text-xs font-black uppercase tracking-widest transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                                >
+                                    View all articles →
+                                </Link>
+                            </div>
+
+                            {!recentPosts.length ? (
+                                <p className="mt-10 border border-dashed border-[var(--border)] p-8 text-[var(--text-muted)]">
+                                    The first story is in the garage. Check back soon for practical motoring advice.
+                                </p>
+                            ) : (
+                                <div className="mt-10 grid gap-px bg-[var(--border)] md:grid-cols-2 xl:grid-cols-3">
+                                    {recentPosts.map((post, index) => (
+                                        <article
+                                            key={post.slug}
+                                            className="group flex min-h-80 flex-col bg-[var(--surface)] p-7 sm:p-9"
+                                        >
+                                            <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                                                <span>/{String(index + 1).padStart(2, '0')}</span>
+                                                <span>{post.reading_time} min read</span>
+                                            </div>
+                                            <h3 className="mt-12 text-3xl font-black uppercase leading-[0.95] tracking-[-0.04em]">
+                                                <Link
+                                                    href={post.url}
+                                                    className="transition group-hover:text-[var(--accent)]"
+                                                >
+                                                    {post.title}
+                                                </Link>
+                                            </h3>
+                                            <p className="mt-5 flex-1 text-sm leading-7 text-[var(--text-muted)]">
+                                                {post.excerpt}
+                                            </p>
+                                            <div className="mt-8 flex items-center justify-between border-t border-[var(--border)] pt-5 text-xs">
+                                                <span className="font-bold">{post.author}</span>
+                                                <time dateTime={post.published_at} className="text-[var(--text-muted)]">
+                                                    {formatDate(post.published_at)}
+                                                </time>
+                                            </div>
+                                        </article>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </section>
+
                     <section id="garage" className="px-5 py-24 sm:px-8 lg:px-12 lg:py-36">
                         <div className="mx-auto max-w-[1384px]">
                             <div className="grid gap-16 lg:grid-cols-[.9fr_1.1fr]">
@@ -449,6 +520,8 @@ export default function Welcome({ publicTrips = [] }) {
                     </div>
                     <div className="flex flex-wrap gap-7 text-xs font-bold uppercase tracking-[0.12em] text-white/35">
                         <a href="#platform">Platform</a>
+                        <Link href="/routes">Browse routes</Link>
+                        <Link href="/blog">Blog</Link>
                         <Link href="/login">Sign in</Link>
                         <Link href="/register">Join Motologic</Link>
                         <span>© {new Date().getFullYear()}</span>

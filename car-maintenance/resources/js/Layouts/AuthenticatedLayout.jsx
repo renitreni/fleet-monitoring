@@ -19,6 +19,7 @@ export default function AuthenticatedLayout({ title, header, children }) {
     const items = user
         ? [
               ...navigation,
+              ...(user.is_analytics_admin ? [{ label: 'Analytics', href: '/admin/analytics' }] : []),
               ...(user.is_trip_admin ? [{ label: 'Add route', href: '/admin/trips' }] : []),
               ...(user.is_blog_admin || user.is_trip_admin ? [{ label: 'Manage blog', href: '/admin/blog' }] : []),
           ]

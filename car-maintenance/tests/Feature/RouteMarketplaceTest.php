@@ -34,6 +34,10 @@ class RouteMarketplaceTest extends TestCase
                 ->has('routes.data', 2)->where('routes.data.0.id', $first->id)->has('routes.data.0.route_points', 3)->missing('routes.data.0.invite_token'));
         }
         $this->get('/routes?search=Alpine')->assertInertia(fn (Assert $page) => $page->has('routes.data', 1)->where('routes.data.0.id', $short->id));
+        $this->get('/routes?filter=joined')->assertInertia(fn (Assert $page) => $page
+            ->where('auth.user', null)
+            ->where('filters.filter', 'all')
+            ->has('routes.data', 2));
         $this->getJson('/routes?sort=invalid')->assertUnprocessable();
         $this->getJson('/routes?filter=invalid')->assertUnprocessable();
         $this->getJson('/routes?search='.str_repeat('a', 121))->assertUnprocessable();

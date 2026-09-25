@@ -101,7 +101,11 @@ export default function Marketplace({ routes, filters, catalogUrl }) {
                 </div>
                 <div className="flex justify-between text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">
                     <span>{routes.total} routes to explore</span>
-                    <Link href="/trips">My route activity →</Link>
+                    {user ? (
+                        <Link href="/trips">My route activity →</Link>
+                    ) : (
+                        <Link href="/login">Sign in to join →</Link>
+                    )}
                 </div>
                 {error && <p role="alert">{error}</p>}
                 {!routes.data.length && (

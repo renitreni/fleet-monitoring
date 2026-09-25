@@ -61,8 +61,8 @@ export default function NotificationBell() {
 
             setNotifications((current) =>
                 current.map((item) =>
-                    item.id === notification.id ? { ...item, read_at: new Date().toISOString() } : item,
-                ),
+                    item.id === notification.id ? { ...item, read_at: new Date().toISOString() } : item
+                )
             );
             setUnreadCount(response.data.unread_count ?? 0);
         } catch (error) {
@@ -147,7 +147,9 @@ export default function NotificationBell() {
                                         disabled={notification.read_at !== null || markingIds.has(notification.id)}
                                         className="block w-full border-b border-[var(--border)] px-4 py-3 text-left last:border-b-0 enabled:hover:bg-[var(--surface-muted)] disabled:cursor-default"
                                     >
-                                        <p className={`text-sm ${notification.read_at ? 'text-[var(--text-muted)]' : 'font-semibold text-[var(--text)]'}`}>
+                                        <p
+                                            className={`text-sm ${notification.read_at ? 'text-[var(--text-muted)]' : 'font-semibold text-[var(--text)]'}`}
+                                        >
                                             {getNotificationMessage(notification)}
                                         </p>
                                         <p className="mt-1 text-xs text-[var(--text-muted)]">
