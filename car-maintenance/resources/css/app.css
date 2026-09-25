@@ -173,3 +173,35 @@ html:not(.dark) .editorial-shell .hero-stage .text-white { color: #fff; }
 .app-shell .text-indigo-600,
 .app-shell .text-blue-600 { color: var(--accent); }
 .app-shell .focus\:ring-indigo-500:focus { --tw-ring-color: var(--accent); }
+
+.blog-content {
+    color: var(--text);
+    font-size: 1.08rem;
+    line-height: 1.85;
+}
+
+.blog-content h1,
+.blog-content h2,
+.blog-content h3 {
+    margin-top: 2.5em;
+    margin-bottom: 0.75em;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -0.035em;
+    text-transform: uppercase;
+}
+
+.blog-content h1 { font-size: 2.5rem; }
+.blog-content h2 { font-size: 2rem; }
+.blog-content h3 { font-size: 1.45rem; }
+.blog-content p,
+.blog-content ul,
+.blog-content ol,
+.blog-content blockquote { margin-top: 1.4em; }
+.blog-content ul { list-style: square; padding-left: 1.4em; }
+.blog-content ol { list-style: decimal; padding-left: 1.4em; }
+.blog-content a { color: var(--accent); font-weight: 700; text-decoration: underline; }
+.blog-content blockquote { border-left: 3px solid var(--accent); padding-left: 1.25rem; color: var(--text-muted); }
+.blog-content code { background: var(--surface-muted); padding: 0.15em 0.35em; font-size: 0.9em; }
+.blog-content pre { margin-top: 1.5em; overflow-x: auto; background: var(--surface-muted); padding: 1rem; }
+.blog-content pre code { padding: 0; }

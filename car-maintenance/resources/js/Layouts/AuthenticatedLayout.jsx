@@ -9,17 +9,23 @@ const navigation = [
     { label: 'Dashboard', href: '/dashboard' },
     { label: 'My cars', href: '/cars' },
     { label: 'Browse routes', href: '/routes' },
+    { label: 'Blog', href: '/blog' },
 ];
 
 export default function AuthenticatedLayout({ title, header, children }) {
     const page = usePage();
     const user = page.props.auth.user;
     const url = page.url;
-    const items = user?.is_trip_admin
-        ? [...navigation, { label: 'Add route', href: '/admin/trips' }]
-        : user
-          ? navigation
-          : [{ label: 'Browse routes', href: '/routes' }];
+    const items = user
+        ? [
+              ...navigation,
+              ...(user.is_trip_admin ? [{ label: 'Add route', href: '/admin/trips' }] : []),
+              ...(user.is_blog_admin || user.is_trip_admin ? [{ label: 'Manage blog', href: '/admin/blog' }] : []),
+          ]
+        : [
+              { label: 'Browse routes', href: '/routes' },
+              { label: 'Blog', href: '/blog' },
+          ];
     const { post } = useForm();
     const [menuOpen, setMenuOpen] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);

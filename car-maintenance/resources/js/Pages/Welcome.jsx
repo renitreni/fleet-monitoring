@@ -50,6 +50,9 @@ export default function Welcome({ publicTrips = [] }) {
                             <a href="#garage" className="transition hover:text-white">
                                 Your garage
                             </a>
+                            <Link href="/blog" className="transition hover:text-white">
+                                Blog
+                            </Link>
                         </div>
                         <div className="flex items-center gap-4">
                             <ThemeToggle />

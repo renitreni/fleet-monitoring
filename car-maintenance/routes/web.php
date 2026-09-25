@@ -2,9 +2,11 @@
 
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AccountPasswordController;
+use App\Http\Controllers\AdminBlogPostController;
 use App\Http\Controllers\AdminMapDesignController;
 use App\Http\Controllers\AdminTripController;
 use App\Http\Controllers\Auth\SocialAuthController;
+use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CarMileageController;
 use App\Http\Controllers\CarsController;
 use App\Http\Controllers\DashboardController;
@@ -24,6 +26,10 @@ Route::get('/', function (TripStandings $standings) {
 
 Route::get('/routes', [RouteCatalogController::class, 'index'])->middleware(PrivateTripResponse::class)->name('routes.index');
 Route::get('/routes/{trip}', [RouteCatalogController::class, 'show'])->middleware(PrivateTripResponse::class)->name('routes.show');
+Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
+Route::get('/blog/feed.xml', [BlogController::class, 'feed'])->name('blog.feed');
+Route::get('/blog/sitemap.xml', [BlogController::class, 'sitemap'])->name('blog.sitemap');
+Route::get('/blog/{slug}', [BlogController::class, 'show'])->name('blog.show');
 
 Route::middleware(['guest'])->group(function () {
     Route::get('/login', fn () => inertia('Auth/Login'))->name('login');
@@ -73,6 +79,11 @@ Route::middleware(['auth', PrivateTripResponse::class])->group(function () {
     Route::get('/admin/trips', [AdminTripController::class, 'index'])->name('admin.trips.index');
     Route::post('/admin/trips', [AdminTripController::class, 'store'])->middleware('throttle:10,1')->name('admin.trips.store');
     Route::patch('/admin/trips/{trip}', [AdminTripController::class, 'update'])->name('admin.trips.update');
+    Route::get('/admin/blog/{blogPost}/preview', [AdminBlogPostController::class, 'show'])->name('admin.blog.preview');
+    Route::resource('/admin/blog', AdminBlogPostController::class)
+        ->parameters(['blog' => 'blogPost'])
+        ->except(['show'])
+        ->names('admin.blog');
     Route::get('/trips', [TripController::class, 'index'])->name('trips.index');
     Route::get('/trips/invitations/{token}', [TripController::class, 'invite'])->name('trips.invite');
     Route::post('/trips/invitations/{token}', [TripController::class, 'join'])->middleware('throttle:10,1')->name('trips.join');

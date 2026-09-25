@@ -29,6 +29,7 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'is_blog_admin' => 'boolean',
             'is_trip_admin' => 'boolean',
             'name_change_history' => 'array',
             'password' => 'hashed',
@@ -46,6 +47,11 @@ class User extends Authenticatable
     public function carCreations(): HasMany
     {
         return $this->hasMany(CarCreation::class);
+    }
+
+    public function blogPosts(): HasMany
+    {
+        return $this->hasMany(BlogPost::class, 'author_id');
     }
 
     public function isPremium(): bool

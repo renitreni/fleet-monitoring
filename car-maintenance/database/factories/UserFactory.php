@@ -64,6 +64,11 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes) => ['is_trip_admin' => true]);
     }
 
+    public function blogAdmin(): static
+    {
+        return $this->state(fn (array $attributes) => ['is_blog_admin' => true]);
+    }
+
     public function premium(): static
     {
         return $this->state(fn (array $attributes) => [
