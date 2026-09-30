@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import Pagination from '@/Components/Pagination';
 
 function formatDate(value) {
     if (!value) return '—';
@@ -75,6 +76,7 @@ export default function BlogAdminIndex({ posts, createUrl }) {
                         <p className="p-8 text-sm text-[var(--text-muted)]">No blog posts yet.</p>
                     )}
                 </div>
+                <Pagination pagination={posts} ariaLabel="Blog administration pagination" itemLabel="posts" />
             </div>
         </AuthenticatedLayout>
     );

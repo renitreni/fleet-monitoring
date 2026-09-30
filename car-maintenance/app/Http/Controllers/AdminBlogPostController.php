@@ -19,16 +19,15 @@ class AdminBlogPostController extends Controller
         $this->authorize('viewAny', BlogPost::class);
 
         $posts = BlogPost::query()
-            ->with('author:id,name')
             ->orderByDesc('updated_at')
             ->orderByDesc('id')
             ->paginate(20)
+            ->onEachSide(1)
             ->through(fn (BlogPost $post): array => [
                 'id' => $post->id,
                 'title' => $post->title,
                 'slug' => $post->slug,
                 'status' => $post->status,
-                'author' => $post->author->name,
                 'publish_at' => $post->publish_at?->toIso8601String(),
                 'published_at' => $post->published_at?->toIso8601String(),
                 'updated_at' => $post->updated_at->toIso8601String(),
@@ -79,14 +78,12 @@ class AdminBlogPostController extends Controller
     public function show(BlogPost $blogPost): Response
     {
         $this->authorize('view', $blogPost);
-        $blogPost->load('author:id,name');
 
         return inertia('Blog/Show', [
             'post' => [
                 'title' => $blogPost->title,
                 'slug' => $blogPost->slug,
                 'excerpt' => $blogPost->excerpt,
-                'author' => $blogPost->author->name,
                 'published_at' => ($blogPost->published_at ?? $blogPost->publish_at ?? $blogPost->updated_at)->toIso8601String(),
                 'reading_time' => $blogPost->readingTimeMinutes(),
                 'body_html' => $blogPost->body_html,

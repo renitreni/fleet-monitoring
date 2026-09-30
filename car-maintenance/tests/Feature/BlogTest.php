@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\BlogPost;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Factories\Sequence;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
@@ -41,13 +42,79 @@ class BlogTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Blog/Index')
                 ->has('posts.data', 1)
+                ->missing('posts.data.0.author')
                 ->where('posts.data.0.title', $published->title));
 
         $this->get(route('blog.show', $published->slug))
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Blog/Show')
                 ->where('post.title', $published->title)
+                ->missing('post.author')
                 ->where('preview', false));
+    }
+
+    public function test_public_blog_pagination_keeps_older_published_posts_accessible(): void
+    {
+        $this->freezeTime();
+        $author = User::factory()->create();
+        $posts = BlogPost::factory()->published()->for($author, 'author')->count(19)
+            ->sequence(fn (Sequence $sequence): array => [
+                'published_at' => now()->subDays(365 + $sequence->index),
+            ])
+            ->create();
+        BlogPost::factory()->for($author, 'author')->create();
+        BlogPost::factory()->for($author, 'author')->scheduled()->create();
+
+        $this->get(route('blog.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Blog/Index')
+                ->has('posts.data', 9)
+                ->where('posts.total', 19)
+                ->where('posts.current_page', 1)
+                ->where('posts.last_page', 3)
+                ->where('posts.prev_page_url', null)
+                ->where('posts.next_page_url', route('blog.index', ['page' => 2]))
+                ->where('posts.data.0.slug', $posts[0]->slug)
+                ->where('posts.data.8.slug', $posts[8]->slug));
+
+        $this->get(route('blog.index', ['page' => 2]))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Blog/Index')
+                ->has('posts.data', 9)
+                ->where('posts.total', 19)
+                ->where('posts.current_page', 2)
+                ->where('posts.prev_page_url', route('blog.index', ['page' => 1]))
+                ->where('posts.next_page_url', route('blog.index', ['page' => 3]))
+                ->where('posts.data.0.slug', $posts[9]->slug)
+                ->where('posts.data.8.slug', $posts[17]->slug));
+
+        $this->get(route('blog.index', ['page' => 3]))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Blog/Index')
+                ->has('posts.data', 1)
+                ->where('posts.total', 19)
+                ->where('posts.current_page', 3)
+                ->where('posts.prev_page_url', route('blog.index', ['page' => 2]))
+                ->where('posts.next_page_url', null)
+                ->where('posts.data.0.slug', $posts[18]->slug)
+                ->missing('posts.data.0.author'));
+
+        $this->get(route('blog.show', $posts[18]->slug))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Blog/Show')
+                ->where('post.slug', $posts[18]->slug));
+    }
+
+    public function test_public_blog_keeps_pagination_metadata_for_an_out_of_range_page(): void
+    {
+        BlogPost::factory()->published()->create();
+
+        $this->get(route('blog.index', ['page' => 99]))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Blog/Index')
+                ->has('posts.data', 0)
+                ->where('posts.total', 1)
+                ->where('posts.first_page_url', route('blog.index', ['page' => 1])));
     }
 
     public function test_landing_page_lists_the_three_latest_published_posts_only(): void
@@ -68,6 +135,7 @@ class BlogTest extends TestCase
                 ->where('recentPosts.0.url', route('blog.show', $latest->slug))
                 ->where('recentPosts.1.title', $second->title)
                 ->where('recentPosts.2.title', $third->title)
+                ->missing('recentPosts.0.author')
                 ->missing('recentPosts.0.body_html')
                 ->missing('recentPosts.0.body_markdown'));
     }
@@ -115,6 +183,34 @@ class BlogTest extends TestCase
         $this->assertFalse($post->created_by_automation);
     }
 
+    public function test_blog_admin_can_reach_posts_beyond_the_first_page(): void
+    {
+        $this->freezeTime();
+        $admin = User::factory()->blogAdmin()->create();
+        $posts = BlogPost::factory()->for($admin, 'author')->count(21)
+            ->sequence(fn (Sequence $sequence): array => [
+                'updated_at' => now()->subDays($sequence->index),
+            ])
+            ->create();
+
+        $this->actingAs($admin)->get(route('admin.blog.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Blog/Admin/Index')
+                ->has('posts.data', 20)
+                ->where('posts.total', 21)
+                ->where('posts.next_page_url', route('admin.blog.index', ['page' => 2]))
+                ->missing('posts.data.0.author'));
+
+        $this->get(route('admin.blog.index', ['page' => 2]))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Blog/Admin/Index')
+                ->has('posts.data', 1)
+                ->where('posts.current_page', 2)
+                ->where('posts.data.0.id', $posts[20]->id)
+                ->where('posts.prev_page_url', route('admin.blog.index', ['page' => 1]))
+                ->where('posts.next_page_url', null));
+    }
+
     public function test_admin_can_publish_immediately_and_preview_a_draft(): void
     {
         $admin = User::factory()->blogAdmin()->create();
@@ -124,6 +220,7 @@ class BlogTest extends TestCase
             ->get(route('admin.blog.preview', $draft))
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Blog/Show')
+                ->missing('post.author')
                 ->where('preview', true));
 
         $this->put(route('admin.blog.update', $draft), $this->payload([

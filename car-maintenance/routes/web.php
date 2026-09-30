@@ -25,7 +25,6 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function (TripStandings $standings) {
     $recentPosts = BlogPost::query()
         ->published()
-        ->with('author:id,name')
         ->orderByDesc('published_at')
         ->orderByDesc('id')
         ->limit(3)
@@ -34,7 +33,6 @@ Route::get('/', function (TripStandings $standings) {
             'title' => $post->title,
             'slug' => $post->slug,
             'excerpt' => $post->excerpt,
-            'author' => $post->author->name,
             'published_at' => $post->published_at->toIso8601String(),
             'reading_time' => $post->readingTimeMinutes(),
             'url' => route('blog.show', $post->slug),

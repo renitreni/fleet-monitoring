@@ -34,7 +34,6 @@ export default function BlogShow({ post, preview = false }) {
                         </h1>
                         <p className="mt-8 max-w-3xl text-xl leading-8 text-[var(--text-muted)]">{post.excerpt}</p>
                         <div className="mt-10 flex flex-wrap gap-x-6 gap-y-2 border-t border-[var(--border)] pt-6 text-xs font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
-                            <span>{post.author}</span>
                             <time dateTime={post.published_at}>{formatDate(post.published_at)}</time>
                             <span>{post.reading_time} min read</span>
                         </div>

@@ -12,10 +12,10 @@ class BlogController extends Controller
     {
         $posts = BlogPost::query()
             ->published()
-            ->with('author:id,name')
             ->orderByDesc('published_at')
             ->orderByDesc('id')
             ->paginate(9)
+            ->onEachSide(1)
             ->through(fn (BlogPost $post): array => $this->summary($post));
 
         return inertia('Blog/Index', ['posts' => $posts]);
@@ -25,7 +25,6 @@ class BlogController extends Controller
     {
         $post = BlogPost::query()
             ->published()
-            ->with('author:id,name')
             ->where('slug', $slug)
             ->firstOrFail();
 
@@ -39,7 +38,6 @@ class BlogController extends Controller
     {
         $posts = BlogPost::query()
             ->published()
-            ->with('author:id,name')
             ->orderByDesc('published_at')
             ->limit(20)
             ->get();
@@ -66,7 +64,6 @@ class BlogController extends Controller
             'title' => $post->title,
             'slug' => $post->slug,
             'excerpt' => $post->excerpt,
-            'author' => $post->author->name,
             'published_at' => $post->published_at->toIso8601String(),
             'reading_time' => $post->readingTimeMinutes(),
             'url' => route('blog.show', $post->slug),

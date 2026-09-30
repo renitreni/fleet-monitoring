@@ -433,7 +433,6 @@ export default function Welcome({ publicTrips = [], recentPosts = [] }) {
                                                 {post.excerpt}
                                             </p>
                                             <div className="mt-8 flex items-center justify-between border-t border-[var(--border)] pt-5 text-xs">
-                                                <span className="font-bold">{post.author}</span>
                                                 <time dateTime={post.published_at} className="text-[var(--text-muted)]">
                                                     {formatDate(post.published_at)}
                                                 </time>
