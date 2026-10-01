@@ -32,6 +32,7 @@ docker compose -f docker-compose.prod.yml build app queue scheduler
 docker compose -f docker-compose.prod.yml up -d app queue scheduler
 docker compose -f docker-compose.prod.yml exec -T app php artisan migrate --force
 docker compose -f docker-compose.prod.yml exec -T app php artisan optimize
+docker compose -f docker-compose.prod.yml exec -T app php artisan analytics:update-country-database --no-interaction || echo "Country database update failed; scheduler will retry." >&2
 docker compose -f docker-compose.prod.yml restart web
 
 for attempt in {1..30}; do

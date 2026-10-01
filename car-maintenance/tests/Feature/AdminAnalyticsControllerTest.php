@@ -104,6 +104,46 @@ class AdminAnalyticsControllerTest extends TestCase
         $this->assertDatabaseCount('analytics_page_views', 4);
     }
 
+    public function test_top_countries_counts_views_limits_ranking_and_separates_unknowns(): void
+    {
+        $this->travelTo('2026-10-01 12:00:00');
+        $admin = User::factory()->analyticsAdmin()->create();
+        AnalyticsPageView::factory()->count(3)->create([
+            'country_code' => 'PH', 'session_hash' => hash('sha256', 'same-session'),
+            'occurred_at' => '2026-10-01 09:00:00',
+        ]);
+        foreach (['AU', 'CA', 'DE', 'FR', 'GB', 'JP', 'SG', 'US'] as $country) {
+            AnalyticsPageView::factory()->create(['country_code' => $country, 'occurred_at' => '2026-10-01 09:00:00']);
+        }
+        AnalyticsPageView::factory()->count(2)->create(['country_code' => null, 'occurred_at' => '2026-10-01 09:00:00']);
+        AnalyticsPageView::factory()->count(4)->create(['country_code' => 'US', 'occurred_at' => '2026-09-01 09:00:00']);
+        AnalyticsPageView::factory()->create(['country_code' => null, 'occurred_at' => '2026-09-01 09:00:00']);
+
+        $this->actingAs($admin)->get(route('admin.analytics.index', ['period' => '7']))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('report.top_countries', [
+                    ['country_code' => 'PH', 'views' => 3],
+                    ['country_code' => 'AU', 'views' => 1],
+                    ['country_code' => 'CA', 'views' => 1],
+                    ['country_code' => 'DE', 'views' => 1],
+                    ['country_code' => 'FR', 'views' => 1],
+                    ['country_code' => 'GB', 'views' => 1],
+                    ['country_code' => 'JP', 'views' => 1],
+                    ['country_code' => 'SG', 'views' => 1],
+                ])
+                ->where('report.unknown_country_views', 2));
+    }
+
+    public function test_country_report_is_empty_when_no_views_exist(): void
+    {
+        $admin = User::factory()->analyticsAdmin()->create();
+
+        $this->actingAs($admin)->get(route('admin.analytics.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('report.top_countries', [])
+                ->where('report.unknown_country_views', 0));
+    }
+
     public function test_custom_range_cannot_exceed_one_year(): void
     {
         $admin = User::factory()->analyticsAdmin()->create();

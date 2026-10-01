@@ -22,6 +22,8 @@ class AnalyticsReport
      *     trend: array<int, array{date: string, page_views: int, sessions: int, registrations: int}>,
      *     top_pages: array<int, array{route_name: string, route_uri: string, views: int}>,
      *     top_referrers: array<int, array{host: string, views: int}>,
+     *     top_countries: array<int, array{country_code: string, views: int}>,
+     *     unknown_country_views: int,
      *     generated_at: string
      * }
      */
@@ -76,6 +78,20 @@ class AnalyticsReport
                     'host' => $pageView->referrer_host,
                     'views' => (int) $pageView->views,
                 ])->all(),
+            'top_countries' => (clone $pageViews)
+                ->whereNotNull('country_code')
+                ->select('country_code')
+                ->selectRaw('COUNT(*) as views')
+                ->groupBy('country_code')
+                ->orderByDesc('views')
+                ->orderBy('country_code')
+                ->limit(8)
+                ->get()
+                ->map(fn (AnalyticsPageView $pageView): array => [
+                    'country_code' => $pageView->country_code,
+                    'views' => (int) $pageView->views,
+                ])->all(),
+            'unknown_country_views' => (clone $pageViews)->whereNull('country_code')->count(),
             'generated_at' => now()->toIso8601String(),
         ];
     }

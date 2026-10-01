@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\AnalyticsPageView;
+use App\Services\AnalyticsCountryResolver;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -10,6 +11,8 @@ use Symfony\Component\HttpFoundation\Response;
 
 class RecordPageView
 {
+    public function __construct(private AnalyticsCountryResolver $countryResolver) {}
+
     /**
      * Handle an incoming request.
      *
@@ -26,6 +29,7 @@ class RecordPageView
                 'route_name' => (string) $request->route()?->getName(),
                 'route_uri' => (string) $request->route()?->uri(),
                 'referrer_host' => $this->externalReferrerHost($request),
+                'country_code' => $this->countryResolver->resolve($request->server('REMOTE_ADDR')),
                 'occurred_at' => now(),
             ];
 

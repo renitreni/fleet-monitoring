@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['user_id', 'session_hash', 'route_name', 'route_uri', 'referrer_host', 'occurred_at'])]
+#[Fillable(['user_id', 'session_hash', 'route_name', 'route_uri', 'referrer_host', 'country_code', 'occurred_at'])]
 class AnalyticsPageView extends Model
 {
     /** @use HasFactory<AnalyticsPageViewFactory> */

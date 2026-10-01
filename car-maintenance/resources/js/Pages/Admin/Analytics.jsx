@@ -1,6 +1,7 @@
 import { Form, Link } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 
+const countryFormatter = new Intl.DisplayNames(['en'], { type: 'region' });
 const numberFormatter = new Intl.NumberFormat();
 const dateFormatter = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' });
 const dateTimeFormatter = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' });
@@ -95,7 +96,7 @@ function TrendChart({ data }) {
     );
 }
 
-function Ranking({ title, eyebrow, rows, empty, renderLabel }) {
+function Ranking({ title, eyebrow, rows, empty, renderLabel, children }) {
     const maximum = Math.max(1, ...rows.map((row) => row.views));
 
     return (
@@ -124,6 +125,7 @@ function Ranking({ title, eyebrow, rows, empty, renderLabel }) {
                     ))}
                 </ol>
             )}
+            {children}
         </section>
     );
 }
@@ -270,6 +272,25 @@ export default function Analytics({ report, filters }) {
                         renderLabel={(row) => row.host}
                     />
                 </section>
+
+                <div className="mt-6">
+                    <Ranking
+                        eyebrow="Audience"
+                        title="Top countries"
+                        rows={report.top_countries}
+                        empty="No country data was recorded in this period."
+                        renderLabel={(row) => countryFormatter.of(row.country_code)}
+                    >
+                        <p className="mt-6 text-xs leading-5 text-[var(--text-muted)]">
+                            Unknown country: {formatNumber(report.unknown_country_views)} page views.
+                            Country collection starts after deployment; older views remain unknown.
+                            Countries reflect approximate IP locations.
+                        </p>
+                        <a href="https://db-ip.com" target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-xs text-[var(--text-muted)] underline hover:text-[var(--text)]">
+                            IP Geolocation by DB-IP
+                        </a>
+                    </Ranking>
+                </div>
 
                 <section className="mt-6 border border-[var(--border)] bg-[var(--surface)] p-6 sm:p-8">
                     <p className="eyebrow">Product engagement</p>

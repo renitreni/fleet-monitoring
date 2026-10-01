@@ -43,6 +43,33 @@ class RecordPageViewTest extends TestCase
         $this->assertNull($pageView->referrer_host);
     }
 
+    public function test_country_uses_remote_address_and_ignores_spoofed_headers(): void
+    {
+        config(['analytics.country_database_path' => base_path('tests/Fixtures/GeoIP2-Country-Test.mmdb')]);
+
+        $this->withServerVariables(['REMOTE_ADDR' => '81.2.69.160'])
+            ->withHeaders([
+                'X-Forwarded-For' => '2001:218::',
+                'CF-IPCountry' => 'PH',
+                'X-Country-Code' => 'US',
+            ])->get(route('blog.index'))->assertOk();
+
+        $pageView = AnalyticsPageView::query()->sole();
+        $this->assertSame('GB', $pageView->country_code);
+        $this->assertStringNotContainsString('81.2.69.160', implode('|', $pageView->getAttributes()));
+        $this->assertStringNotContainsString('2001:218::', implode('|', $pageView->getAttributes()));
+    }
+
+    public function test_lookup_failure_still_records_page_view_with_unknown_country(): void
+    {
+        config(['analytics.country_database_path' => base_path('composer.json')]);
+
+        $this->withServerVariables(['REMOTE_ADDR' => '81.2.69.160'])
+            ->get(route('blog.index'))->assertOk();
+
+        $this->assertNull(AnalyticsPageView::query()->sole()->country_code);
+    }
+
     public function test_prefetch_and_bot_requests_are_not_recorded(): void
     {
         $this->withHeaders(['Purpose' => 'prefetch'])->get(route('blog.index'))->assertOk();

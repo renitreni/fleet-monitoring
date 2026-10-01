@@ -19,6 +19,7 @@ class AnalyticsPageViewFactory extends Factory
     {
         return [
             'user_id' => null,
+            'country_code' => null,
             'session_hash' => hash('sha256', fake()->uuid()),
             'route_name' => 'home',
             'route_uri' => '/',
