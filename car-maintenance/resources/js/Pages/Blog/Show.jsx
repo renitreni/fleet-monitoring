@@ -10,6 +10,7 @@ export default function BlogShow({ post, preview = false }) {
         <AuthenticatedLayout title={post.seo_title}>
             <Head>
                 <meta name="description" content={post.meta_description} />
+                <meta name="author" content={post.author_name} />
                 <meta property="og:type" content="article" />
                 <meta property="og:title" content={post.seo_title} />
                 <meta property="og:description" content={post.meta_description} />
@@ -34,6 +35,7 @@ export default function BlogShow({ post, preview = false }) {
                         </h1>
                         <p className="mt-8 max-w-3xl text-xl leading-8 text-[var(--text-muted)]">{post.excerpt}</p>
                         <div className="mt-10 flex flex-wrap gap-x-6 gap-y-2 border-t border-[var(--border)] pt-6 text-xs font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                            <span>By {post.author_name}</span>
                             <time dateTime={post.published_at}>{formatDate(post.published_at)}</time>
                             <span>{post.reading_time} min read</span>
                         </div>

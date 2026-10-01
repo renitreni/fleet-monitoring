@@ -69,7 +69,8 @@ export default function BlogIndex({ posts }) {
                                     </Link>
                                 </h2>
                                 <p className="mt-5 flex-1 text-sm leading-7 text-[var(--text-muted)]">{post.excerpt}</p>
-                                <div className="mt-8 flex items-center justify-between border-t border-[var(--border)] pt-5 text-xs">
+                                <div className="mt-8 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-[var(--border)] pt-5 text-xs">
+                                    <span className="break-all text-[var(--text-muted)]">By {post.author_name}</span>
                                     <time dateTime={post.published_at} className="text-[var(--text-muted)]">
                                         {formatDate(post.published_at)}
                                     </time>

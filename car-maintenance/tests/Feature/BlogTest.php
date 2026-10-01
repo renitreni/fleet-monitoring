@@ -53,6 +53,44 @@ class BlogTest extends TestCase
                 ->where('preview', false));
     }
 
+    public function test_public_blog_uses_the_domain_as_author_name(): void
+    {
+        $author = User::factory()->create(['name' => 'Private author name']);
+        $post = BlogPost::factory()->published()->for($author, 'author')->create();
+
+        $this->get('https://journal.example:8443/blog')
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Blog/Index')
+                ->where('posts.data.0.author_name', 'journal.example')
+                ->missing('posts.data.0.author'));
+
+        $this->get('https://journal.example:8443/blog/'.$post->slug)
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Blog/Show')
+                ->where('post.author_name', 'journal.example')
+                ->missing('post.author'));
+
+        $this->get('https://journal.example:8443/')
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Welcome')
+                ->where('recentPosts.0.author_name', 'journal.example')
+                ->missing('recentPosts.0.author'));
+    }
+
+    public function test_draft_preview_uses_the_domain_as_author_name(): void
+    {
+        $admin = User::factory()->blogAdmin()->create(['name' => 'Private admin name']);
+        $draft = BlogPost::factory()->for($admin, 'author')->create();
+
+        $this->actingAs($admin)
+            ->get('http://preview.example:8000/admin/blog/'.$draft->id.'/preview')
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Blog/Show')
+                ->where('post.author_name', 'preview.example')
+                ->missing('post.author')
+                ->where('preview', true));
+    }
+
     public function test_public_blog_pagination_keeps_older_published_posts_accessible(): void
     {
         $this->freezeTime();

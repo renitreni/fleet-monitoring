@@ -33,6 +33,7 @@ Route::get('/', function (TripStandings $standings) {
             'title' => $post->title,
             'slug' => $post->slug,
             'excerpt' => $post->excerpt,
+            'author_name' => parse_url(route('home'), PHP_URL_HOST),
             'published_at' => $post->published_at->toIso8601String(),
             'reading_time' => $post->readingTimeMinutes(),
             'url' => route('blog.show', $post->slug),

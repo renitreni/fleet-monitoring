@@ -84,6 +84,7 @@ class AdminBlogPostController extends Controller
                 'title' => $blogPost->title,
                 'slug' => $blogPost->slug,
                 'excerpt' => $blogPost->excerpt,
+                'author_name' => parse_url(route('home'), PHP_URL_HOST),
                 'published_at' => ($blogPost->published_at ?? $blogPost->publish_at ?? $blogPost->updated_at)->toIso8601String(),
                 'reading_time' => $blogPost->readingTimeMinutes(),
                 'body_html' => $blogPost->body_html,
