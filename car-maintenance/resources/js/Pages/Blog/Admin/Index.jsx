@@ -17,7 +17,7 @@ export default function BlogAdminIndex({ posts, createUrl }) {
                         <p className="eyebrow">Editorial workspace</p>
                         <h1 className="mt-2 text-3xl font-black uppercase">Manage blog</h1>
                         <p className="mt-3 text-sm text-[var(--text-muted)]">
-                            Draft, schedule, and publish Motologic stories.
+                            Draft, schedule, and publish Motologic stories. Views are counted once per browser session per day.
                         </p>
                     </div>
                     <Link
@@ -36,6 +36,7 @@ export default function BlogAdminIndex({ posts, createUrl }) {
                             <tr>
                                 <th className="px-5 py-4">Article</th>
                                 <th className="px-5 py-4">Status</th>
+                                <th className="px-5 py-4 text-right">Views</th>
                                 <th className="px-5 py-4">Publish time</th>
                                 <th className="px-5 py-4">Updated</th>
                                 <th className="px-5 py-4 text-right">Actions</th>
@@ -52,6 +53,9 @@ export default function BlogAdminIndex({ posts, createUrl }) {
                                         <span className="border border-[var(--border)] px-2 py-1 text-[10px] font-black uppercase tracking-[0.12em]">
                                             {post.status}
                                         </span>
+                                    </td>
+                                    <td className="px-5 py-5 text-right tabular-nums" title="Counted once per browser session per day.">
+                                        {new Intl.NumberFormat('en-PH').format(post.views_count)}
                                     </td>
                                     <td className="px-5 py-5 text-[var(--text-muted)]">
                                         {formatDate(post.publish_at || post.published_at)}

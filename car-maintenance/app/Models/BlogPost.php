@@ -32,6 +32,7 @@ class BlogPost extends Model
     {
         return [
             'created_by_automation' => 'boolean',
+            'views_count' => 'integer',
             'publish_at' => 'datetime',
             'published_at' => 'datetime',
         ];

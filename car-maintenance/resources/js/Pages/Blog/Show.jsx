@@ -38,6 +38,11 @@ export default function BlogShow({ post, preview = false }) {
                             <span>By {post.author_name}</span>
                             <time dateTime={post.published_at}>{formatDate(post.published_at)}</time>
                             <span>{post.reading_time} min read</span>
+                            {!preview && (
+                                <span title="Counted once per browser session per day.">
+                                    {new Intl.NumberFormat('en-PH').format(post.views_count)} {post.views_count === 1 ? 'view' : 'views'}
+                                </span>
+                            )}
                         </div>
                     </div>
                 </header>

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\BlogPost;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
 use Inertia\Response;
 
@@ -21,12 +22,14 @@ class BlogController extends Controller
         return inertia('Blog/Index', ['posts' => $posts]);
     }
 
-    public function show(string $slug): Response
+    public function show(Request $request, string $slug): Response
     {
         $post = BlogPost::query()
             ->published()
             ->where('slug', $slug)
             ->firstOrFail();
+
+        $request->attributes->set('blog_post_id', $post->id);
 
         return inertia('Blog/Show', [
             'post' => $this->article($post),
@@ -76,6 +79,7 @@ class BlogController extends Controller
     {
         return [
             ...$this->summary($post),
+            'views_count' => $post->views_count,
             'body_html' => $post->body_html,
             'seo_title' => $post->seo_title ?: $post->title,
             'meta_description' => $post->meta_description ?: $post->excerpt,

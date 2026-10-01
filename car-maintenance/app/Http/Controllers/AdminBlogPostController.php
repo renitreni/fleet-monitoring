@@ -28,6 +28,7 @@ class AdminBlogPostController extends Controller
                 'title' => $post->title,
                 'slug' => $post->slug,
                 'status' => $post->status,
+                'views_count' => $post->views_count,
                 'publish_at' => $post->publish_at?->toIso8601String(),
                 'published_at' => $post->published_at?->toIso8601String(),
                 'updated_at' => $post->updated_at->toIso8601String(),

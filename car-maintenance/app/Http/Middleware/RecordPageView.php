@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Models\AnalyticsPageView;
 use App\Services\AnalyticsCountryResolver;
+use App\Services\BlogPostViewRecorder;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -11,7 +12,10 @@ use Symfony\Component\HttpFoundation\Response;
 
 class RecordPageView
 {
-    public function __construct(private AnalyticsCountryResolver $countryResolver) {}
+    public function __construct(
+        private AnalyticsCountryResolver $countryResolver,
+        private BlogPostViewRecorder $blogPostViewRecorder,
+    ) {}
 
     /**
      * Handle an incoming request.
@@ -34,6 +38,13 @@ class RecordPageView
             ];
 
             defer(fn () => AnalyticsPageView::create($attributes));
+
+            $postId = $request->attributes->get('blog_post_id');
+
+            if ($request->routeIs('blog.show') && is_int($postId)) {
+                $viewedOn = $attributes['occurred_at']->copy()->setTimezone(config('blog.timezone'))->toDateString();
+                defer(fn () => $this->blogPostViewRecorder->record($postId, $attributes['session_hash'], $viewedOn));
+            }
         }
 
         return $response;
