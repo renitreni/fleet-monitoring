@@ -277,7 +277,7 @@ export default function Analytics({ report, filters }) {
                     <Ranking
                         eyebrow="Audience"
                         title="Top countries"
-                        rows={report.top_countries}
+                        rows={report.top_countries ?? []}
                         empty="No country data was recorded in this period."
                         renderLabel={(row) => countryFormatter.of(row.country_code)}
                     >
