@@ -1,6 +1,6 @@
 import './bootstrap';
 import { createInertiaApp } from '@inertiajs/react';
-import { createRoot } from 'react-dom/client';
+import { createRoot, hydrateRoot } from 'react-dom/client';
 import { StrictMode } from 'react';
 import ErrorBoundary from '@/Components/ErrorBoundary';
 import { ThemeProvider } from '@/Contexts/ThemeContext';
@@ -12,7 +12,7 @@ createInertiaApp({
         return pages[`./Pages/${name}.jsx`];
     },
     setup({ el, App, props }) {
-        createRoot(el).render(
+        const application = (
             <StrictMode>
                 <ThemeProvider>
                     <ErrorBoundary>
@@ -21,5 +21,11 @@ createInertiaApp({
                 </ThemeProvider>
             </StrictMode>
         );
+
+        if (el.hasChildNodes()) {
+            hydrateRoot(el, application);
+        } else {
+            createRoot(el).render(application);
+        }
     },
 });

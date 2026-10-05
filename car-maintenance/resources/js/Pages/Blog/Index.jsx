@@ -3,7 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import Pagination from '@/Components/Pagination';
 
 function formatDate(value) {
-    return new Intl.DateTimeFormat(undefined, { dateStyle: 'long' }).format(new Date(value));
+    return new Intl.DateTimeFormat('en-PH', { dateStyle: 'long', timeZone: 'Asia/Manila' }).format(new Date(value));
 }
 
 export default function BlogIndex({ posts }) {

@@ -37,6 +37,9 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        Inertia::disableSsr(fn (): bool => ! config('inertia.ssr.enabled', true)
+            || ! $request->routeIs('blog.index', 'blog.show'));
+
         return [
             ...parent::share($request),
             'mapDesigns' => Inertia::always(fn () => (new MapDesigns)->available()),

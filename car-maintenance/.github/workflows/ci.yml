@@ -20,7 +20,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.4'
           extensions: mbstring, intl, pdo, pdo_sqlite, sqlite3, zip, bcmath
           coverage: none
           tools: composer:v2
@@ -28,7 +28,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       - name: Install Composer dependencies
@@ -48,8 +48,8 @@ jobs:
           cp .env.example .env
           php artisan key:generate --ansi
 
+      - name: Build frontend and SSR assets
+        run: npm run build
+
       - name: Run PHPUnit tests
         run: php artisan test --ansi
-
-      - name: Build frontend assets
-        run: npm run build

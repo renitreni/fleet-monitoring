@@ -19,18 +19,22 @@ function applyTheme(theme) {
 }
 
 export function ThemeProvider({ children }) {
-    const [theme, setThemeState] = useState(() => {
-        if (typeof window === 'undefined') {
-            return 'light';
-        }
-
-        return window.localStorage.getItem(storageKey) || getSystemTheme();
-    });
-    const [hasOverride, setHasOverride] = useState(() => Boolean(window.localStorage.getItem(storageKey)));
+    const [theme, setThemeState] = useState('light');
+    const [hasOverride, setHasOverride] = useState(false);
+    const [ready, setReady] = useState(false);
 
     useEffect(() => {
-        applyTheme(theme);
-    }, [theme]);
+        const savedTheme = window.localStorage.getItem(storageKey);
+        setThemeState(savedTheme || getSystemTheme());
+        setHasOverride(Boolean(savedTheme));
+        setReady(true);
+    }, []);
+
+    useEffect(() => {
+        if (ready) {
+            applyTheme(theme);
+        }
+    }, [theme, ready]);
 
     useEffect(() => {
         if (hasOverride) {

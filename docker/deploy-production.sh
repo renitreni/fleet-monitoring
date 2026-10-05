@@ -28,15 +28,16 @@ docker run --rm \
     node:22-alpine \
     sh -c 'npm ci && npm run build'
 
-docker compose -f docker-compose.prod.yml build app queue scheduler
-docker compose -f docker-compose.prod.yml up -d app queue scheduler
+docker compose -f docker-compose.prod.yml build app queue scheduler ssr
+docker compose -f docker-compose.prod.yml up -d app queue scheduler ssr
 docker compose -f docker-compose.prod.yml exec -T app php artisan migrate --force
 docker compose -f docker-compose.prod.yml exec -T app php artisan optimize
 docker compose -f docker-compose.prod.yml exec -T app php artisan analytics:update-country-database --no-interaction || echo "Country database update failed; scheduler will retry." >&2
 docker compose -f docker-compose.prod.yml restart web
 
 for attempt in {1..30}; do
-    if curl --fail --silent --show-error --max-time 5 https://motologic.tech/login >/dev/null; then
+    if curl --fail --silent --show-error --max-time 5 https://motologic.tech/login >/dev/null &&
+        curl --fail --silent --show-error --max-time 10 https://motologic.tech/blog | grep 'data-server-rendered="true"' >/dev/null; then
         printf '%s\n' "${target_revision}" > "${revision_file}"
         exit 0
     fi

@@ -13,6 +13,7 @@ services:
       - ./car-maintenance/bootstrap/cache:/var/www/bootstrap/cache
     environment:
       APP_ENV: production
+      INERTIA_SSR_URL: http://ssr:13714
       APP_DEBUG: false
       CACHE_STORE: redis
       SESSION_DRIVER: redis
@@ -20,6 +21,8 @@ services:
     networks:
       - car_maintenance_network
     depends_on:
+      ssr:
+        condition: service_healthy
       db:
         condition: service_healthy
       redis:
@@ -33,6 +36,20 @@ services:
     command: >
       sh -c "php artisan config:cache &&
              exec php-fpm"
+
+  ssr:
+    build:
+      context: .
+      dockerfile: docker/ssr/Dockerfile
+    restart: unless-stopped
+    networks:
+      - car_maintenance_network
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:13714/health').then(r => { if (!r.ok) process.exit(1); }).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   web:
     image: nginx:alpine

@@ -2,7 +2,7 @@ import { Head, Link } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 
 function formatDate(value) {
-    return new Intl.DateTimeFormat(undefined, { dateStyle: 'long' }).format(new Date(value));
+    return new Intl.DateTimeFormat('en-PH', { dateStyle: 'long', timeZone: 'Asia/Manila' }).format(new Date(value));
 }
 
 export default function BlogShow({ post, preview = false }) {
@@ -12,6 +12,7 @@ export default function BlogShow({ post, preview = false }) {
                 <meta name="description" content={post.meta_description} />
                 <meta name="author" content={post.author_name} />
                 <meta property="og:type" content="article" />
+                <meta property="og:url" content={post.url} />
                 <meta property="og:title" content={post.seo_title} />
                 <meta property="og:description" content={post.meta_description} />
                 <link rel="canonical" href={post.url} />
