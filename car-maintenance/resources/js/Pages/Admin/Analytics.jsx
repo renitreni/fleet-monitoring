@@ -1,5 +1,6 @@
 import { Form, Link } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import BlogProfitability from '@/Components/BlogProfitability';
 
 const countryFormatter = new Intl.DisplayNames(['en'], { type: 'region' });
 const numberFormatter = new Intl.NumberFormat();
@@ -240,6 +241,13 @@ export default function Analytics({ report, filters }) {
                         note="New accounts that added a car"
                     />
                 </section>
+
+                <BlogProfitability
+                    key={`${filters.from}-${filters.to}`}
+                    views={report.product.blog_views}
+                    from={filters.from}
+                    to={filters.to}
+                />
 
                 <section className="mt-6 border border-[var(--border)] bg-[var(--surface)] p-6 sm:p-8">
                     <div className="mb-8 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
