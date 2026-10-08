@@ -46,8 +46,19 @@ export default function BlogAdminIndex({ posts, createUrl }) {
                             {posts.data.map((post) => (
                                 <tr key={post.id}>
                                     <td className="px-5 py-5">
-                                        <p className="font-bold">{post.title}</p>
-                                        <p className="mt-1 text-xs text-[var(--text-muted)]">/{post.slug}</p>
+                                        <div className="flex items-center gap-3">
+                                            {post.cover_image_url && (
+                                                <img
+                                                    src={post.cover_image_url}
+                                                    alt=""
+                                                    className="h-12 w-20 shrink-0 border border-[var(--border)] object-cover"
+                                                />
+                                            )}
+                                            <div>
+                                                <p className="font-bold">{post.title}</p>
+                                                <p className="mt-1 text-xs text-[var(--text-muted)]">/{post.slug}</p>
+                                            </div>
+                                        </div>
                                     </td>
                                     <td className="px-5 py-5">
                                         <span className="border border-[var(--border)] px-2 py-1 text-[10px] font-black uppercase tracking-[0.12em]">

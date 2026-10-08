@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react';
 import { Link, useForm } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import Button from '@/Components/Button';
@@ -13,15 +14,61 @@ const emptyPost = {
     publish_at: '',
     seo_title: '',
     meta_description: '',
+    byline: '',
+    tags: '',
+    cover_image: null,
+    remove_cover_image: false,
 };
 
+function parseTags(value) {
+    return value
+        .split(',')
+        .map((tag) => tag.trim())
+        .filter(Boolean);
+}
+
 export default function BlogAdminEdit({ post, submitUrl, timezone }) {
-    const form = useForm(post ? { ...emptyPost, ...post } : emptyPost);
+    const initial = post ? { ...emptyPost, ...post, cover_image: null, remove_cover_image: false } : emptyPost;
+    const form = useForm(initial);
+    const [coverPreview, setCoverPreview] = useState(post?.cover_image_url ?? null);
+    const fileInputRef = useRef(null);
 
     function submit(event) {
         event.preventDefault();
-        if (post) form.put(submitUrl, { preserveScroll: true });
-        else form.post(submitUrl);
+
+        const options = {
+            preserveScroll: true,
+            forceFormData: true,
+        };
+
+        form.transform((data) => ({
+            ...data,
+            tags: parseTags(data.tags ?? ''),
+        }));
+
+        if (post) form.put(submitUrl, options);
+        else form.post(submitUrl, options);
+    }
+
+    function handleCoverChange(event) {
+        const file = event.target.files?.[0] ?? null;
+        form.setData('cover_image', file);
+        form.setData('remove_cover_image', false);
+
+        if (coverPreview?.startsWith('blob:')) {
+            URL.revokeObjectURL(coverPreview);
+        }
+        setCoverPreview(file ? URL.createObjectURL(file) : post?.cover_image_url ?? null);
+    }
+
+    function handleRemoveCover() {
+        form.setData('cover_image', null);
+        form.setData('remove_cover_image', true);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        if (coverPreview?.startsWith('blob:')) {
+            URL.revokeObjectURL(coverPreview);
+        }
+        setCoverPreview(null);
     }
 
     return (
@@ -46,6 +93,7 @@ export default function BlogAdminEdit({ post, submitUrl, timezone }) {
         >
             <form
                 onSubmit={submit}
+                encType="multipart/form-data"
                 className="mx-auto grid max-w-[1384px] gap-8 px-5 py-10 sm:px-8 lg:grid-cols-[minmax(0,1fr)_340px]"
             >
                 <div className="space-y-6">
@@ -99,6 +147,44 @@ export default function BlogAdminEdit({ post, submitUrl, timezone }) {
                         {form.errors.body_markdown && (
                             <p className="mt-2 text-sm text-red-600">{form.errors.body_markdown}</p>
                         )}
+                        {post?.reading_time != null && (
+                            <p className="mt-1 text-xs text-[var(--text-muted)]">
+                                Reading time: {post.reading_time} min (updated when the body changes)
+                            </p>
+                        )}
+                    </div>
+                    <div>
+                        <Label htmlFor="cover_image">Cover image</Label>
+                        {coverPreview && (
+                            <img
+                                src={coverPreview}
+                                alt="Cover preview"
+                                className="mt-2 aspect-[2/1] w-full max-w-md border border-[var(--border)] object-cover"
+                            />
+                        )}
+                        <input
+                            ref={fileInputRef}
+                            id="cover_image"
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            onChange={handleCoverChange}
+                            className="mt-2 block w-full text-sm"
+                        />
+                        <div className="mt-2 flex items-center gap-4">
+                            {(coverPreview || post?.cover_image_url) && (
+                                <button
+                                    type="button"
+                                    onClick={handleRemoveCover}
+                                    className="text-xs font-black uppercase tracking-[0.12em] text-red-600"
+                                >
+                                    Remove cover
+                                </button>
+                            )}
+                        </div>
+                        <p className="mt-1 text-xs text-[var(--text-muted)]">
+                            JPG, PNG, or WebP up to 4 MB. Shown as the article hero and social share image.
+                        </p>
+                        {form.errors.cover_image && <p className="mt-2 text-sm text-red-600">{form.errors.cover_image}</p>}
                     </div>
                 </div>
 
@@ -139,6 +225,38 @@ export default function BlogAdminEdit({ post, submitUrl, timezone }) {
                     </div>
 
                     <div className="space-y-5 border border-[var(--border)] bg-[var(--surface)] p-5">
+                        <h2 className="text-sm font-black uppercase tracking-[0.14em]">Organization</h2>
+                        <div>
+                            <Label htmlFor="byline">Byline</Label>
+                            <TextInput
+                                id="byline"
+                                maxLength={120}
+                                value={form.data.byline || ''}
+                                onChange={(event) => form.setData('byline', event.target.value)}
+                                placeholder="Motologic Editorial Team"
+                                className="border p-3"
+                            />
+                            <p className="mt-1 text-xs text-[var(--text-muted)]">
+                                Defaults to the site name. A real byline (e.g. “Motologic Editorial Team”) helps search
+                                trust signals.
+                            </p>
+                            {form.errors.byline && <p className="mt-2 text-sm text-red-600">{form.errors.byline}</p>}
+                        </div>
+                        <div>
+                            <Label htmlFor="tags">Tags</Label>
+                            <TextInput
+                                id="tags"
+                                value={form.data.tags || ''}
+                                onChange={(event) => form.setData('tags', event.target.value)}
+                                placeholder="maintenance, pms, toyota"
+                                className="border p-3"
+                            />
+                            <p className="mt-1 text-xs text-[var(--text-muted)]">Comma-separated, up to 10.</p>
+                            {form.errors.tags && <p className="mt-2 text-sm text-red-600">{form.errors.tags}</p>}
+                        </div>
+                    </div>
+
+                    <div className="space-y-5 border border-[var(--border)] bg-[var(--surface)] p-5">
                         <h2 className="text-sm font-black uppercase tracking-[0.14em]">Search preview</h2>
                         <div>
                             <Label htmlFor="seo_title">SEO title</Label>
@@ -149,6 +267,10 @@ export default function BlogAdminEdit({ post, submitUrl, timezone }) {
                                 onChange={(event) => form.setData('seo_title', event.target.value)}
                                 className="border p-3"
                             />
+                            <p className="mt-1 text-xs text-[var(--text-muted)]">
+                                {(form.data.seo_title || form.data.title || '').length}/70
+                                {(form.data.seo_title || form.data.title || '').length > 60 && ' — may truncate in search results'}
+                            </p>
                         </div>
                         <div>
                             <Label htmlFor="meta_description">Meta description</Label>
@@ -159,6 +281,9 @@ export default function BlogAdminEdit({ post, submitUrl, timezone }) {
                                 onChange={(event) => form.setData('meta_description', event.target.value)}
                                 className="mt-1 min-h-28 w-full border border-[var(--border)] bg-[var(--surface)] p-3"
                             />
+                            <p className="mt-1 text-xs text-[var(--text-muted)]">
+                                {(form.data.meta_description || '').length}/180
+                            </p>
                         </div>
                     </div>
 
