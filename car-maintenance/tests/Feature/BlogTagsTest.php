@@ -29,6 +29,21 @@ class BlogTagsTest extends TestCase
                 ->where('posts.data.0.title', $matching->title));
     }
 
+    public function test_tag_archive_is_not_excluded_from_ssr(): void
+    {
+        // HandleInertiaRequests disables SSR outside an allowlist of blog
+        // routes; the tag archive must stay in it or crawlers get an empty
+        // client-rendered shell.
+        $tag = BlogTag::factory()->create(['name' => 'Maintenance', 'slug' => 'maintenance']);
+        BlogPost::factory()->published()->hasAttached($tag, [], 'tags')->create();
+
+        $this->get(route('blog.tag', 'maintenance'))->assertOk();
+
+        $gateway = app(\Inertia\Ssr\HttpGateway::class);
+        $disabled = new \ReflectionProperty($gateway, 'disabled');
+        $this->assertFalse($disabled->getValue($gateway)());
+    }
+
     public function test_tag_archive_404s_for_unknown_slug(): void
     {
         $this->get('/blog/tag/does-not-exist')->assertNotFound();
