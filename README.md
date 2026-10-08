@@ -176,6 +176,8 @@ docker-compose exec app php artisan oil-changes:check
 
 ## Production Deployment
 
+Production server: `ssh root@187.53.134.76` (app lives at `/opt/fleet-monitoring`, site is https://motologic.tech)
+
 ```bash
 # Use production compose file
 docker-compose -f docker-compose.prod.yml up -d --build
