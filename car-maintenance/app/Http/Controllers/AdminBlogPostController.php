@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\SaveBlogPostRequest;
 use App\Models\BlogPost;
+use App\Models\BlogTag;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Response;
 
@@ -32,6 +34,7 @@ class AdminBlogPostController extends Controller
                 'publish_at' => $post->publish_at?->toIso8601String(),
                 'published_at' => $post->published_at?->toIso8601String(),
                 'updated_at' => $post->updated_at->toIso8601String(),
+                'cover_image_url' => $post->coverImageUrl(),
                 'edit_url' => route('admin.blog.edit', $post),
                 'preview_url' => route('admin.blog.preview', $post),
                 'public_url' => $post->status === 'published' ? route('blog.show', $post->slug) : null,
@@ -70,6 +73,9 @@ class AdminBlogPostController extends Controller
 
         $post = BlogPost::create($data);
 
+        $this->syncCoverImage($request, $post);
+        $this->syncTags($request, $post);
+
         return redirect()->route('admin.blog.edit', $post)->with('success', 'Blog post saved.');
     }
 
@@ -85,14 +91,18 @@ class AdminBlogPostController extends Controller
                 'title' => $blogPost->title,
                 'slug' => $blogPost->slug,
                 'excerpt' => $blogPost->excerpt,
-                'author_name' => parse_url(route('home'), PHP_URL_HOST),
+                'author_name' => $blogPost->bylineName(),
                 'published_at' => ($blogPost->published_at ?? $blogPost->publish_at ?? $blogPost->updated_at)->toIso8601String(),
                 'reading_time' => $blogPost->readingTimeMinutes(),
                 'body_html' => $blogPost->body_html,
+                'toc' => $blogPost->toc ?? [],
                 'seo_title' => $blogPost->seo_title ?: $blogPost->title,
-                'meta_description' => $blogPost->meta_description ?: $blogPost->excerpt,
-                'url' => route('admin.blog.preview', $blogPost),
+                'meta_description' => $blogPost->metaDescription(),
+                'url' => $blogPost->status === 'published'
+                    ? route('blog.show', $blogPost->slug)
+                    : route('admin.blog.preview', $blogPost),
             ],
+            'related' => [],
             'preview' => true,
         ]);
     }
@@ -115,6 +125,10 @@ class AdminBlogPostController extends Controller
                 'publish_at' => $blogPost->publish_at?->clone()->setTimezone(config('blog.timezone'))->format('Y-m-d\TH:i'),
                 'seo_title' => $blogPost->seo_title,
                 'meta_description' => $blogPost->meta_description,
+                'byline' => $blogPost->byline,
+                'cover_image_url' => $blogPost->coverImageUrl(),
+                'tags' => $blogPost->tags->pluck('name')->implode(', '),
+                'reading_time' => $blogPost->readingTimeMinutes(),
                 'preview_url' => route('admin.blog.preview', $blogPost),
             ],
             'submitUrl' => route('admin.blog.update', $blogPost),
@@ -130,6 +144,9 @@ class AdminBlogPostController extends Controller
         $data = $this->prepareData($request->validated(), $blogPost);
         $data['slug'] = $data['slug'] ?: $blogPost->slug;
         $blogPost->update($data);
+
+        $this->syncCoverImage($request, $blogPost);
+        $this->syncTags($request, $blogPost);
 
         return back()->with('success', 'Blog post updated.');
     }
@@ -151,6 +168,12 @@ class AdminBlogPostController extends Controller
      */
     private function prepareData(array $data, ?BlogPost $post = null): array
     {
+        unset($data['tags'], $data['remove_cover_image']);
+
+        if (is_string($data['cover_image'] ?? null) && ! Str::startsWith($data['cover_image'], ['http://', 'https://'])) {
+            unset($data['cover_image']);
+        }
+
         if (! empty($data['publish_at'])) {
             $data['publish_at'] = Carbon::createFromFormat(
                 'Y-m-d\TH:i',
@@ -184,5 +207,50 @@ class AdminBlogPostController extends Controller
         }
 
         return $slug;
+    }
+
+    private function syncCoverImage(SaveBlogPostRequest $request, BlogPost $post): void
+    {
+        if ($request->boolean('remove_cover_image')) {
+            $this->deleteCoverFile($post);
+            $post->update(['cover_image' => null]);
+
+            return;
+        }
+
+        if ($request->hasFile('cover_image')) {
+            $this->deleteCoverFile($post);
+            $path = $request->file('cover_image')->store('blog-covers', config('blog.image_disk'));
+            $post->update(['cover_image' => $path]);
+
+            return;
+        }
+
+        $cover = $request->input('cover_image');
+
+        if (is_string($cover) && Str::startsWith($cover, ['http://', 'https://'])) {
+            $post->update(['cover_image' => $cover]);
+        }
+    }
+
+    private function deleteCoverFile(BlogPost $post): void
+    {
+        if ($post->cover_image && ! Str::startsWith($post->cover_image, ['http://', 'https://', '//'])) {
+            Storage::disk(config('blog.image_disk'))->delete($post->cover_image);
+        }
+    }
+
+    private function syncTags(SaveBlogPostRequest $request, BlogPost $post): void
+    {
+        $ids = collect($request->input('tags', []))
+            ->map(fn ($tag): string => trim((string) $tag))
+            ->filter()
+            ->map(function (string $name): int {
+                $slug = Str::slug($name) ?: 'tag-'.Str::lower(Str::random(6));
+
+                return BlogTag::query()->firstOrCreate(['slug' => $slug], ['name' => $name])->id;
+            });
+
+        $post->tags()->sync($ids->all());
     }
 }

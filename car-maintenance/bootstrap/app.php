@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\CachePublicBlogPages;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\RecordPageView;
 use Illuminate\Foundation\Application;
@@ -17,6 +18,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             HandleInertiaRequests::class,
             RecordPageView::class,
+        ]);
+
+        $middleware->alias([
+            'cache.public' => CachePublicBlogPages::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

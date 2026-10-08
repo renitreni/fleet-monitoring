@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     @inertiaHead
+    @if ($page['props']['schema'] ?? null)
+        <script type="application/ld+json" id="page-schema">{!! json_encode($page['props']['schema'], JSON_UNESCAPED_SLASHES) !!}</script>
+    @endif
     @if (! $__inertiaSsrResponse)
         <title data-inertia>{{ config('app.name', 'Motologic') }}</title>
     @endif

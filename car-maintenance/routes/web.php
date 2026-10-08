@@ -25,6 +25,16 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function (TripStandings $standings) {
     $recentPosts = BlogPost::query()
         ->published()
+        ->select([
+            'id',
+            'byline',
+            'title',
+            'slug',
+            'excerpt',
+            'published_at',
+            'cover_image',
+            'reading_time_minutes',
+        ])
         ->orderByDesc('published_at')
         ->orderByDesc('id')
         ->limit(3)
@@ -33,10 +43,11 @@ Route::get('/', function (TripStandings $standings) {
             'title' => $post->title,
             'slug' => $post->slug,
             'excerpt' => $post->excerpt,
-            'author_name' => parse_url(route('home'), PHP_URL_HOST),
+            'author_name' => $post->bylineName(),
             'published_at' => $post->published_at->toIso8601String(),
             'reading_time' => $post->readingTimeMinutes(),
             'url' => route('blog.show', $post->slug),
+            'cover_image_url' => $post->coverImageUrl(),
         ]);
 
     return inertia('Welcome', [
@@ -47,10 +58,11 @@ Route::get('/', function (TripStandings $standings) {
 
 Route::get('/routes', [RouteCatalogController::class, 'index'])->middleware(PrivateTripResponse::class)->name('routes.index');
 Route::get('/routes/{trip}', [RouteCatalogController::class, 'show'])->middleware(PrivateTripResponse::class)->name('routes.show');
-Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
+Route::get('/blog', [BlogController::class, 'index'])->middleware('cache.public')->name('blog.index');
 Route::get('/blog/feed.xml', [BlogController::class, 'feed'])->name('blog.feed');
 Route::get('/blog/sitemap.xml', [BlogController::class, 'sitemap'])->name('blog.sitemap');
-Route::get('/blog/{slug}', [BlogController::class, 'show'])->name('blog.show');
+Route::get('/blog/tag/{blogTag:slug}', [BlogController::class, 'tag'])->middleware('cache.public')->name('blog.tag');
+Route::get('/blog/{slug}', [BlogController::class, 'show'])->middleware('cache.public')->name('blog.show');
 
 Route::middleware(['guest'])->group(function () {
     Route::get('/login', fn () => inertia('Auth/Login'))->name('login');
