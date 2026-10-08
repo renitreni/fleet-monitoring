@@ -9,7 +9,21 @@
         <script type="application/ld+json" id="page-schema">{!! json_encode($page['props']['schema'], JSON_UNESCAPED_SLASHES) !!}</script>
     @endif
     @if (! $__inertiaSsrResponse)
-        <title data-inertia>{{ config('app.name', 'Motologic') }}</title>
+        <title data-inertia>{{ config('app.name', 'Motologic') }} — Free Car Maintenance Tracker</title>
+        <meta
+            name="description"
+            content="Motologic tracks mileage and oil changes, predicts your next service before the warning light, and recommends the right engine oil for your car — free."
+        >
+        <meta property="og:type" content="website">
+        <meta property="og:site_name" content="{{ config('app.name', 'Motologic') }}">
+        <meta property="og:title" content="{{ config('app.name', 'Motologic') }} — Free Car Maintenance Tracker">
+        <meta
+            property="og:description"
+            content="Motologic tracks mileage and oil changes, predicts your next service before the warning light, and recommends the right engine oil for your car — free."
+        >
+        <meta property="og:url" content="{{ url()->current() }}">
+        <meta property="og:image" content="{{ asset('images/motologic-hero.png') }}">
+        <meta name="twitter:card" content="summary_large_image">
     @endif
     <meta name="theme-color" content="#f3f1ec">
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">

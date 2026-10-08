@@ -13,7 +13,7 @@ createServer(
             render: renderToString,
             title: (title) => `${title} - ${import.meta.env.VITE_APP_NAME ?? 'Motologic'}`,
             resolve: (name) => {
-                const pages = import.meta.glob('./Pages/Blog/{Index,Show}.jsx', { eager: true });
+                const pages = import.meta.glob('./Pages/**/*.jsx', { eager: true });
                 return pages[`./Pages/${name}.jsx`];
             },
             setup: ({ App, props }) => (

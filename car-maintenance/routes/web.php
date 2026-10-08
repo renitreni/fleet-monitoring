@@ -53,6 +53,29 @@ Route::get('/', function (TripStandings $standings) {
     return inertia('Welcome', [
         'publicTrips' => $standings->publicTrips(),
         'recentPosts' => $recentPosts,
+        'schema' => [
+            '@context' => 'https://schema.org',
+            '@graph' => [
+                [
+                    '@type' => 'WebSite',
+                    'name' => 'Motologic',
+                    'url' => route('home'),
+                ],
+                [
+                    '@type' => 'SoftwareApplication',
+                    'name' => 'Motologic',
+                    'url' => route('home'),
+                    'applicationCategory' => 'UtilitiesApplication',
+                    'operatingSystem' => 'Web',
+                    'offers' => [
+                        '@type' => 'Offer',
+                        'price' => '0',
+                        'priceCurrency' => 'USD',
+                    ],
+                    'description' => 'Free car maintenance tracker: mileage logs, oil-change reminders, and AI engine-oil recommendations tailored to your vehicle.',
+                ],
+            ],
+        ],
     ]);
 })->name('home');
 

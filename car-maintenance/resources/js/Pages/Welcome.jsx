@@ -28,11 +28,28 @@ export default function Welcome({ publicTrips = [], recentPosts = [] }) {
 
     return (
         <>
-            <Head title="Drive ready">
+            <Head title="Free Car Maintenance Tracker & Oil Change Reminders">
                 <meta
                     name="description"
-                    content="Intelligent car maintenance tracking, reminders, and engine oil recommendations."
+                    content="Motologic tracks mileage and oil changes, predicts your next service before the warning light, and recommends the right engine oil for your car — free."
                 />
+                <link rel="canonical" href="https://motologic.tech/" />
+                <meta property="og:type" content="website" />
+                <meta property="og:site_name" content="Motologic" />
+                <meta property="og:title" content="Motologic — Free Car Maintenance Tracker & Oil Change Reminders" />
+                <meta
+                    property="og:description"
+                    content="Motologic tracks mileage and oil changes, predicts your next service before the warning light, and recommends the right engine oil for your car — free."
+                />
+                <meta property="og:url" content="https://motologic.tech/" />
+                <meta property="og:image" content="https://motologic.tech/images/motologic-hero.png" />
+                <meta name="twitter:card" content="summary_large_image" />
+                <meta name="twitter:title" content="Motologic — Free Car Maintenance Tracker & Oil Change Reminders" />
+                <meta
+                    name="twitter:description"
+                    content="Track mileage, get oil-change reminders, and know the right oil for your engine — free."
+                />
+                <meta name="twitter:image" content="https://motologic.tech/images/motologic-hero.png" />
             </Head>
 
             <div className="editorial-shell min-h-screen bg-[var(--background)] text-[var(--text)] selection:bg-[var(--accent)] selection:text-white">
@@ -91,7 +108,7 @@ export default function Welcome({ publicTrips = [], recentPosts = [] }) {
                 </header>
 
                 <main id="top">
-                    <section className="hero-stage relative isolate min-h-[900px] overflow-hidden border-b border-white/10">
+                    <section className="hero-stage relative isolate min-h-[82vh] overflow-hidden border-b border-white/10">
                         <img
                             src={theme === 'dark' ? '/images/motologic-hero.png' : '/images/motologic-hero-light.png'}
                             alt={`Graphite performance car in a ${theme === 'dark' ? 'night-time' : 'daylight'} pit lane`}
@@ -101,10 +118,10 @@ export default function Welcome({ publicTrips = [], recentPosts = [] }) {
                         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(9,11,13,.55)_0%,transparent_25%,transparent_70%,#090b0d_100%)]" />
                         <div className="motologic-grid absolute inset-0 opacity-25" />
 
-                        <div className="relative mx-auto flex min-h-[900px] max-w-[1480px] items-end px-5 pb-20 pt-36 sm:px-8 lg:items-center lg:px-12 lg:pb-0">
+                        <div className="relative mx-auto flex min-h-[82vh] max-w-[1480px] items-end px-5 pb-20 pt-36 sm:px-8 lg:items-center lg:px-12 lg:pb-0">
                             <div className="max-w-[760px]">
                                 <div className="flex items-center gap-3 text-[11px] font-black uppercase tracking-[0.26em] text-white/55">
-                                    <span className="h-px w-10 bg-[#ee2b24]" /> Intelligent vehicle care
+                                    <span className="h-px w-10 bg-[#ee2b24]" /> Free car maintenance tracker
                                 </div>
                                 <h1 className="mt-7 text-[clamp(4.6rem,9vw,9.6rem)] font-black uppercase leading-[0.78] tracking-[-0.075em]">
                                     Drive
@@ -112,8 +129,8 @@ export default function Welcome({ publicTrips = [], recentPosts = [] }) {
                                     <span className="text-outline">ready.</span>
                                 </h1>
                                 <p className="mt-9 max-w-xl text-lg leading-8 text-white/65 sm:text-xl">
-                                    Your car tells a story in kilometers, oil, and time. Motologic reads the signals and
-                                    keeps you ahead of what comes next.
+                                    Motologic logs every kilometer and oil change, predicts your next service before the
+                                    warning light, and recommends the exact oil your engine needs — free.
                                 </p>
                                 <div className="mt-10 flex flex-col gap-5 sm:flex-row sm:items-center">
                                     <Link
@@ -122,6 +139,12 @@ export default function Welcome({ publicTrips = [], recentPosts = [] }) {
                                     >
                                         Add your car <Arrow />
                                     </Link>
+                                    <a
+                                        href="#platform"
+                                        className="flex w-fit items-center gap-3 border border-white/25 px-7 py-4 text-sm font-black uppercase tracking-[0.12em] text-white/80 transition hover:border-white hover:text-white"
+                                    >
+                                        See how it works
+                                    </a>
                                     <p className="text-xs font-bold uppercase tracking-[0.16em] text-white/35">
                                         No card · Setup in 2 minutes
                                     </p>
@@ -433,7 +456,9 @@ export default function Welcome({ publicTrips = [], recentPosts = [] }) {
                                                 {post.excerpt}
                                             </p>
                                             <div className="mt-8 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-[var(--border)] pt-5 text-xs">
-                                                <span className="break-all text-[var(--text-muted)]">By {post.author_name}</span>
+                                                <span className="break-all text-[var(--text-muted)]">
+                                                    By {post.author_name}
+                                                </span>
                                                 <time dateTime={post.published_at} className="text-[var(--text-muted)]">
                                                     {formatDate(post.published_at)}
                                                 </time>
