@@ -47,4 +47,10 @@ return [
         'redirect' => env('FACEBOOK_REDIRECT_URI'),
     ],
 
+    'indexnow' => [
+        // Not a secret: the same key is published at {key}.txt in public/.
+        'key' => env('INDEXNOW_KEY', '87a884420bbfa7d889aedf5c136f5b1b'),
+        'endpoint' => env('INDEXNOW_ENDPOINT', 'https://api.indexnow.org/indexnow'),
+    ],
+
 ];

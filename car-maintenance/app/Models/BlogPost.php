@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Jobs\SubmitBlogPostToIndexNow;
+use App\Support\BlogPostHtmlProcessor;
 use Database\Factories\BlogPostFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -13,7 +15,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use App\Support\BlogPostHtmlProcessor;
 
 #[Fillable(['author_id', 'byline', 'title', 'slug', 'excerpt', 'body_markdown', 'status', 'publish_at', 'published_at', 'seo_title', 'meta_description', 'cover_image', 'reading_time_minutes', 'source', 'created_by_automation'])]
 class BlogPost extends Model
@@ -34,6 +35,18 @@ class BlogPost extends Model
                 $post->body_html = $processed['html'];
                 $post->reading_time_minutes = self::computeReadingTime($processed['html']);
                 $post->toc = $processed['toc'];
+            }
+        });
+
+        static::saved(function (BlogPost $post): void {
+            // Notify IndexNow when a post is published or an already-public
+            // post materially changes (publish, update, slug change).
+            if ($post->status !== 'published' || $post->published_at === null) {
+                return;
+            }
+
+            if ($post->wasChanged()) {
+                SubmitBlogPostToIndexNow::dispatch($post->slug);
             }
         });
 
