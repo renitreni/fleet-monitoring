@@ -28,6 +28,26 @@ class BlogRelatedPostsTest extends TestCase
                 ->missing('related.3'));
     }
 
+    public function test_related_query_selects_the_tags_count_subquery(): void
+    {
+        // MySQL rejects ORDER BY on an alias missing from the SELECT list
+        // (SQLite tolerates it), so lock the generated SQL shape.
+        $post = BlogPost::factory()->published()->create();
+
+        $sql = BlogPost::query()
+            ->select(['id', 'title', 'slug'])
+            ->related($post)
+            ->limit(3)
+            ->toSql();
+
+        $this->assertStringContainsString('as "tags_count"', $sql);
+        $this->assertLessThan(
+            strpos($sql, 'order by'),
+            strpos($sql, 'as "tags_count"'),
+            'tags_count must be selected before the ORDER BY clause',
+        );
+    }
+
     public function test_related_posts_rank_shared_tags_first(): void
     {
         $tag = BlogTag::factory()->create();

@@ -104,8 +104,11 @@ class BlogController extends Controller
         return inertia('Blog/Show', [
             'post' => $this->article($post),
             'related' => BlogPost::query()
-                ->related($post)
+                // Select first: the related() scope appends its tags_count
+                // subquery via addSelect, and a later select() would drop it,
+                // leaving an ORDER BY on an alias MySQL rejects.
                 ->select(self::SUMMARY_COLUMNS)
+                ->related($post)
                 ->with(['tags:id,name,slug'])
                 ->limit(3)
                 ->get()
