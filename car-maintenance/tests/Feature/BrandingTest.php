@@ -19,7 +19,7 @@ class BrandingTest extends TestCase
 
         $response
             ->assertOk()
-            ->assertSee('<title inertia>Motologic</title>', false)
+            ->assertSee('<title data-inertia>Motologic</title>', false)
             ->assertSee('<meta name="theme-color" content="#f3f1ec">', false)
             ->assertSee("localStorage.getItem('motologic-theme')", false)
             ->assertSee('<link rel="icon" href="/favicon.svg" type="image/svg+xml">', false)
