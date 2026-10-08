@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\BlogPost;
+use App\Models\BlogTag;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
@@ -53,5 +54,19 @@ class BlogPostFactory extends Factory
             'publish_at' => now()->addDay(),
             'published_at' => null,
         ]);
+    }
+
+    public function withCover(): static
+    {
+        return $this->state(fn (): array => [
+            'cover_image' => 'blog-covers/'.fake()->uuid().'.webp',
+        ]);
+    }
+
+    public function withTags(int $count = 2): static
+    {
+        return $this->afterCreating(function (BlogPost $post) use ($count): void {
+            $post->tags()->sync(BlogTag::factory()->count($count)->create()->pluck('id'));
+        });
     }
 }
