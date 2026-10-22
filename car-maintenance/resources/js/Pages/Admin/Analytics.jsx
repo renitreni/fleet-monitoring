@@ -211,6 +211,12 @@ export default function Analytics({ report, filters }) {
                         >
                             Apply
                         </button>
+                        <Link
+                            href={`/admin/analytics/export?period=${filters.period}&from=${filters.from}&to=${filters.to}`}
+                            className="border border-[var(--border)] px-5 py-2.5 text-xs font-black uppercase tracking-[0.14em] hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                        >
+                            Export CSV
+                        </Link>
                     </Form>
                 </section>
 

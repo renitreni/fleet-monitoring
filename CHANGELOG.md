@@ -7,7 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-_No unreleased changes yet._
+### Added
+- **Admin Analytics — Ad Placement CSV Export**
+  - `GET /admin/analytics/export` streams `ad-placement-report_<from>_<to>.csv` for the selected period (same `viewAnalytics` permission as the dashboard)
+  - `AnalyticsReport::adPlacementsForRange()` ranks routes by traffic and suggests an ad format per surface: in-content + sidebar for blog, below-the-fold banner for the landing page, inline sponsored cards for route/trip lists, and explicitly ad-free product/account surfaces
+  - CSV sections: ad placement opportunities (views, share of traffic %, sessions, views per session, suggested format, rationale), acquisition channels (referrer hosts), and audience geography (country share for geo-targeting)
+  - "Export CSV" button on `/admin/analytics` carries the active period/custom range filters
+  - Feature tests covering CSV content, authorization, and custom-range scoping
 
 ## [0.1.0] — 2026-09-03
 

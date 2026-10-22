@@ -100,6 +100,7 @@ Route::middleware(['guest'])->group(function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/admin/analytics', [AdminAnalyticsController::class, 'index'])->name('admin.analytics.index');
+    Route::get('/admin/analytics/export', [AdminAnalyticsController::class, 'export'])->name('admin.analytics.export');
     Route::get('/account', [AccountController::class, 'show'])->middleware(PrivateTripResponse::class)->name('account.show');
     Route::post('/account/password/email', [AccountPasswordController::class, 'store'])->middleware('throttle:5,1')->name('account.password.email');
     Route::put('/account/password', [AccountPasswordController::class, 'update'])->middleware('throttle:5,1')->name('account.password.update');

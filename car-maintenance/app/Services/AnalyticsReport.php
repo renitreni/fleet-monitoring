@@ -102,6 +102,122 @@ class AnalyticsReport
     }
 
     /**
+     * Ad placement intelligence answering "where should we put the ads".
+     *
+     * @return array{
+     *     from: string,
+     *     to: string,
+     *     total_views: int,
+     *     placements: array<int, array{route_name: string, route_uri: string, views: int, share_of_views: float, sessions: int, views_per_session: float, suggested_format: string, rationale: string}>,
+     *     channels: array<int, array{host: string, views: int, sessions: int, share_of_views: float}>,
+     *     countries: array<int, array{country_code: string, views: int, share_of_views: float}>,
+     *     unknown_country_views: int
+     * }
+     */
+    public function adPlacementsForRange(CarbonImmutable $from, CarbonImmutable $to): array
+    {
+        $pageViews = $this->pageViewsBetween($from, $to);
+        $totalViews = (clone $pageViews)->count();
+
+        $placements = (clone $pageViews)
+            ->select(['route_name', 'route_uri'])
+            ->selectRaw('COUNT(*) as views')
+            ->selectRaw('COUNT(DISTINCT session_hash) as sessions')
+            ->groupBy('route_name', 'route_uri')
+            ->orderByDesc('views')
+            ->orderBy('route_name')
+            ->get()
+            ->map(function (AnalyticsPageView $pageView) use ($totalViews): array {
+                $views = (int) $pageView->views;
+                $sessions = (int) $pageView->sessions;
+                [$format, $rationale] = $this->suggestAdFormat($pageView->route_name);
+
+                return [
+                    'route_name' => $pageView->route_name,
+                    'route_uri' => $pageView->route_uri,
+                    'views' => $views,
+                    'share_of_views' => $totalViews === 0 ? 0.0 : round(($views / $totalViews) * 100, 1),
+                    'sessions' => $sessions,
+                    'views_per_session' => $sessions === 0 ? 0.0 : round($views / $sessions, 2),
+                    'suggested_format' => $format,
+                    'rationale' => $rationale,
+                ];
+            })->all();
+
+        $channels = (clone $pageViews)
+            ->whereNotNull('referrer_host')
+            ->select('referrer_host')
+            ->selectRaw('COUNT(*) as views')
+            ->selectRaw('COUNT(DISTINCT session_hash) as sessions')
+            ->groupBy('referrer_host')
+            ->orderByDesc('views')
+            ->orderBy('referrer_host')
+            ->get()
+            ->map(fn (AnalyticsPageView $pageView): array => [
+                'host' => $pageView->referrer_host,
+                'views' => (int) $pageView->views,
+                'sessions' => (int) $pageView->sessions,
+                'share_of_views' => $totalViews === 0 ? 0.0 : round(((int) $pageView->views / $totalViews) * 100, 1),
+            ])->all();
+
+        $countries = (clone $pageViews)
+            ->whereNotNull('country_code')
+            ->select('country_code')
+            ->selectRaw('COUNT(*) as views')
+            ->groupBy('country_code')
+            ->orderByDesc('views')
+            ->orderBy('country_code')
+            ->get()
+            ->map(fn (AnalyticsPageView $pageView): array => [
+                'country_code' => $pageView->country_code,
+                'views' => (int) $pageView->views,
+                'share_of_views' => $totalViews === 0 ? 0.0 : round(((int) $pageView->views / $totalViews) * 100, 1),
+            ])->all();
+
+        return [
+            'from' => $from->toDateString(),
+            'to' => $to->toDateString(),
+            'total_views' => $totalViews,
+            'placements' => $placements,
+            'channels' => $channels,
+            'countries' => $countries,
+            'unknown_country_views' => (clone $pageViews)->whereNull('country_code')->count(),
+        ];
+    }
+
+    /**
+     * @return array{0: string, 1: string}
+     */
+    private function suggestAdFormat(string $routeName): array
+    {
+        return match (true) {
+            str_starts_with($routeName, 'blog.') => [
+                'In-content + sidebar',
+                'Content pages hold attention; ads blend into the reading flow without touching product workflows.',
+            ],
+            $routeName === 'home' => [
+                'Below-the-fold banner',
+                'Landing attention is high; place ads after the value proposition to protect conversion.',
+            ],
+            str_starts_with($routeName, 'routes.') || str_starts_with($routeName, 'trips.') => [
+                'Inline list cards',
+                'List browsing tolerates sponsored cards between rows without breaking core actions.',
+            ],
+            str_starts_with($routeName, 'dashboard')
+                || str_starts_with($routeName, 'admin.')
+                || str_starts_with($routeName, 'account.')
+                || str_starts_with($routeName, 'cars.') => [
+                    'Keep ad-free',
+                    'Product and account surfaces drive activation and retention; ads here would cost more than they earn.',
+                ],
+            default => [
+                'Standard banner',
+                'Moderate traffic; test a banner and measure bounce before expanding.',
+            ],
+        };
+    }
+
+    /**
      * @return array<int, array{date: string, page_views: int, sessions: int, registrations: int}>
      */
     private function trend(CarbonImmutable $from, CarbonImmutable $to): array

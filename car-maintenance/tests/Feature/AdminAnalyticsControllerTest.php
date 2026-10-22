@@ -187,6 +187,110 @@ class AdminAnalyticsControllerTest extends TestCase
                 ->has('report.trend', 10));
     }
 
+    public function test_administrator_downloads_ad_placement_csv_for_selected_period(): void
+    {
+        $this->travelTo('2026-09-25 12:00:00');
+        $admin = User::factory()->analyticsAdmin()->create();
+        AnalyticsPageView::factory()->count(3)->create([
+            'session_hash' => hash('sha256', 'session-a'),
+            'route_name' => 'blog.show',
+            'route_uri' => 'blog/{slug}',
+            'referrer_host' => 'search.example',
+            'country_code' => 'PH',
+            'occurred_at' => '2026-09-24 08:00:00',
+        ]);
+        AnalyticsPageView::factory()->create([
+            'session_hash' => hash('sha256', 'session-b'),
+            'route_name' => 'home',
+            'route_uri' => '/',
+            'referrer_host' => 'search.example',
+            'country_code' => 'PH',
+            'occurred_at' => '2026-09-24 09:00:00',
+        ]);
+        AnalyticsPageView::factory()->create([
+            'route_name' => 'dashboard',
+            'route_uri' => 'dashboard',
+            'occurred_at' => '2026-09-24 10:00:00',
+        ]);
+        AnalyticsPageView::factory()->create([
+            'route_name' => 'home',
+            'route_uri' => '/',
+            'occurred_at' => '2026-08-01 08:00:00',
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->get(route('admin.analytics.export', ['period' => '7']));
+
+        $response->assertOk();
+        $response->assertHeader('content-type', 'text/csv; charset=UTF-8');
+        $this->assertStringContainsString(
+            'ad-placement-report_2026-09-19_2026-09-25.csv',
+            $response->headers->get('content-disposition'),
+        );
+
+        $csv = array_values(array_filter(array_map('str_getcsv', explode("\n", trim($response->streamedContent())))));
+
+        $this->assertContains(['Question answered', 'Where should we put the ads to monetize the system?'], $csv);
+        $this->assertContains(['SECTION 1 - Ad placement opportunities (where to place ads)'], $csv);
+        $this->assertContains(['Rank', 'Route URI', 'Route name', 'Page views', 'Share of traffic %', 'Unique sessions', 'Views per session', 'Suggested ad format', 'Why'], $csv);
+        $this->assertContains(['SECTION 2 - Acquisition channels (who brings the traffic worth monetizing)'], $csv);
+        $this->assertContains(['SECTION 3 - Audience geography (geo-target the ad inventory)'], $csv);
+
+        $this->assertContains(['1', 'blog/{slug}', 'blog.show', '3', '60', '1', '3', 'In-content + sidebar', 'Content pages hold attention; ads blend into the reading flow without touching product workflows.'], $csv);
+        $this->assertContains(['2', 'dashboard', 'dashboard', '1', '20', '1', '1', 'Keep ad-free', 'Product and account surfaces drive activation and retention; ads here would cost more than they earn.'], $csv);
+        $this->assertContains(['3', '/', 'home', '1', '20', '1', '1', 'Below-the-fold banner', 'Landing attention is high; place ads after the value proposition to protect conversion.'], $csv);
+
+        $this->assertContains(['1', 'search.example', '4', '2', '80'], $csv);
+        $this->assertContains(['1', 'PH', '4', '80'], $csv);
+        $this->assertNotContains(['1', '/', 'home', '2', '50', '2', '1', 'Below-the-fold banner', 'Landing attention is high; place ads after the value proposition to protect conversion.'], $csv);
+    }
+
+    #[DataProvider('unprivilegedRoles')]
+    public function test_users_without_analytics_permission_cannot_export_ad_placement_csv(string $role): void
+    {
+        $user = match ($role) {
+            'driver' => User::factory()->create(),
+            'trip administrator' => User::factory()->tripAdmin()->create(),
+            'blog administrator' => User::factory()->blogAdmin()->create(),
+        };
+
+        $this->actingAs($user)
+            ->get(route('admin.analytics.export'))
+            ->assertForbidden();
+    }
+
+    public function test_ad_placement_csv_respects_custom_range(): void
+    {
+        $admin = User::factory()->analyticsAdmin()->create();
+        AnalyticsPageView::factory()->create([
+            'route_name' => 'home',
+            'route_uri' => '/',
+            'occurred_at' => '2026-09-05 08:00:00',
+        ]);
+        AnalyticsPageView::factory()->create([
+            'route_name' => 'blog.show',
+            'route_uri' => 'blog/{slug}',
+            'occurred_at' => '2026-09-15 08:00:00',
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->get(route('admin.analytics.export', [
+                'period' => 'custom',
+                'from' => '2026-09-01',
+                'to' => '2026-09-10',
+            ]));
+
+        $response->assertOk();
+        $this->assertStringContainsString(
+            'ad-placement-report_2026-09-01_2026-09-10.csv',
+            $response->headers->get('content-disposition'),
+        );
+
+        $body = $response->streamedContent();
+        $this->assertStringContainsString('home', $body);
+        $this->assertStringNotContainsString('blog/{slug}', $body);
+    }
+
     public function test_analytics_admin_command_grants_and_revokes_access(): void
     {
         $user = User::factory()->create();
