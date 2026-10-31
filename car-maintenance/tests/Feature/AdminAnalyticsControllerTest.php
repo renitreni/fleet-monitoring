@@ -99,7 +99,12 @@ class AdminAnalyticsControllerTest extends TestCase
                 ->where('report.top_pages.0.route_name', 'blog.show')
                 ->where('report.top_pages.0.views', 1)
                 ->where('report.top_referrers.0.host', 'search.example')
-                ->where('report.top_referrers.0.views', 2));
+                ->where('report.top_referrers.0.views', 2)
+                ->has('report.registered_users', 2)
+                ->where('report.registered_users.0.created_at', '2026-09-24T10:00:00+00:00')
+                ->where('report.registered_users.0.has_car', false)
+                ->where('report.registered_users.1.created_at', '2026-09-24T09:00:00+00:00')
+                ->where('report.registered_users.1.has_car', true));
 
         $this->assertDatabaseCount('analytics_page_views', 4);
     }
