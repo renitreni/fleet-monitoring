@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Form, Link } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import BlogProfitability from '@/Components/BlogProfitability';
@@ -11,9 +12,26 @@ function formatNumber(value) {
     return numberFormatter.format(value ?? 0);
 }
 
-function StatCard({ index, label, value, suffix = '', note }) {
+function StatCard({ index, label, value, suffix = '', note, onClick }) {
+    const handleKeyDown = (e) => {
+        if (onClick && (e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault();
+            onClick();
+        }
+    };
+
     return (
-        <article className="border border-[var(--border)] bg-[var(--surface)] p-6 sm:p-7">
+        <article
+            className={
+                'border border-[var(--border)] bg-[var(--surface)] p-6 sm:p-7 transition-colors duration-200' +
+                (onClick ? ' cursor-pointer hover:bg-[var(--surface-hover)] hover:border-[var(--accent)] group' : '')
+            }
+            onClick={onClick}
+            onKeyDown={handleKeyDown}
+            role={onClick ? 'button' : undefined}
+            tabIndex={onClick ? 0 : undefined}
+            aria-label={onClick ? `View ${label.toLowerCase()}` : undefined}
+        >
             <div className="flex items-center justify-between gap-4 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
                 <span>/{index}</span>
                 <span>{label}</span>
@@ -23,6 +41,11 @@ function StatCard({ index, label, value, suffix = '', note }) {
                 {suffix && <span className="ml-1 text-2xl text-[var(--accent)]">{suffix}</span>}
             </p>
             <p className="mt-4 text-xs leading-5 text-[var(--text-muted)]">{note}</p>
+            {onClick && (
+                <span className="mt-2 text-[10px] text-[var(--accent)] font-bold uppercase tracking-[0.1em] block group-hover:underline">
+                    Click to view users →
+                </span>
+            )}
         </article>
     );
 }
@@ -131,7 +154,109 @@ function Ranking({ title, eyebrow, rows, empty, renderLabel, children }) {
     );
 }
 
+function RegistrationsModal({ open, onClose, users = [] }) {
+    useEffect(() => {
+        if (!open) return;
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                onClose();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [open, onClose]);
+
+    if (!open) return null;
+
+    return (
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="registrations-modal-title"
+        >
+            <div
+                className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+                onClick={onClose}
+                aria-hidden="true"
+            />
+            <div
+                className="relative w-full max-w-lg bg-[var(--surface)] border border-[var(--border)] shadow-2xl p-6 sm:p-7 flex flex-col max-h-[85vh] z-10"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="flex items-start justify-between gap-4 mb-2">
+                    <div>
+                        <p className="eyebrow text-xs">Registrations</p>
+                        <h2
+                            id="registrations-modal-title"
+                            className="text-xl font-black uppercase tracking-[-0.02em] mt-1"
+                        >
+                            New Registrations ({formatNumber(users.length)})
+                        </h2>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="p-1 text-[var(--text-muted)] hover:text-[var(--text)] transition-colors text-lg font-bold leading-none"
+                        aria-label="Close modal"
+                    >
+                        ✕
+                    </button>
+                </div>
+                <p className="text-sm text-[var(--text-muted)] mb-5">Accounts created during the selected period.</p>
+
+                {users.length === 0 ? (
+                    <div className="py-12 text-center border border-dashed border-[var(--border)] text-sm text-[var(--text-muted)]">
+                        No accounts were registered during this period.
+                    </div>
+                ) : (
+                    <div className="space-y-3 overflow-y-auto pr-1">
+                        {users.map((user) => (
+                            <div
+                                key={user.id}
+                                className="flex items-center justify-between gap-3 p-3.5 border border-[var(--border)] bg-[var(--background)] transition-colors hover:border-[var(--accent)]"
+                            >
+                                <div className="min-w-0 flex-1">
+                                    <p className="font-bold text-sm truncate text-[var(--text)]">{user.name}</p>
+                                    <p className="text-xs text-[var(--text-muted)] truncate select-all">{user.email}</p>
+                                </div>
+                                <div className="text-right shrink-0">
+                                    {user.created_at && (
+                                        <p className="text-[11px] text-[var(--text-muted)]">
+                                            {dateTimeFormatter.format(new Date(user.created_at))}
+                                        </p>
+                                    )}
+                                    {user.has_car ? (
+                                        <span className="inline-block mt-1 text-[10px] font-black uppercase tracking-wider text-[var(--accent)]">
+                                            Active
+                                        </span>
+                                    ) : (
+                                        <span className="inline-block mt-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                                            Registered
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                <div className="mt-6 pt-4 border-t border-[var(--border)] flex justify-end">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="px-4 py-2 text-xs font-black uppercase tracking-[0.1em] border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)] text-[var(--text)] transition-colors"
+                    >
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export default function Analytics({ report, filters }) {
+    const [registrationsModalOpen, setRegistrationsModalOpen] = useState(false);
+
     const presets = [
         { value: '7', label: '7 days' },
         { value: '30', label: '30 days' },
@@ -238,6 +363,7 @@ export default function Analytics({ report, filters }) {
                         label="Registrations"
                         value={report.overview.registrations}
                         note="Accounts created in this period"
+                        onClick={() => setRegistrationsModalOpen(true)}
                     />
                     <StatCard
                         index="04"
@@ -296,11 +422,16 @@ export default function Analytics({ report, filters }) {
                         renderLabel={(row) => countryFormatter.of(row.country_code)}
                     >
                         <p className="mt-6 text-xs leading-5 text-[var(--text-muted)]">
-                            Unknown country: {formatNumber(report.unknown_country_views)} page views.
-                            Country collection starts after deployment; older views remain unknown.
-                            Countries reflect approximate IP locations.
+                            Unknown country: {formatNumber(report.unknown_country_views)} page views. Country collection
+                            starts after deployment; older views remain unknown. Countries reflect approximate IP
+                            locations.
                         </p>
-                        <a href="https://db-ip.com" target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-xs text-[var(--text-muted)] underline hover:text-[var(--text)]">
+                        <a
+                            href="https://db-ip.com"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-2 inline-block text-xs text-[var(--text-muted)] underline hover:text-[var(--text)]"
+                        >
                             IP Geolocation by DB-IP
                         </a>
                     </Ranking>
@@ -321,6 +452,11 @@ export default function Analytics({ report, filters }) {
                     </dl>
                 </section>
             </div>
+            <RegistrationsModal
+                open={registrationsModalOpen}
+                onClose={() => setRegistrationsModalOpen(false)}
+                users={report.registered_users || []}
+            />
         </AuthenticatedLayout>
     );
 }

@@ -24,6 +24,7 @@ class AnalyticsReport
      *     top_referrers: array<int, array{host: string, views: int}>,
      *     top_countries: array<int, array{country_code: string, views: int}>,
      *     unknown_country_views: int,
+     *     registered_users: array<int, array{id: int, name: string, email: string, created_at: ?string, has_car: bool}>,
      *     generated_at: string
      * }
      */
@@ -36,6 +37,21 @@ class AnalyticsReport
             ->whereHas('cars', fn (Builder $query): Builder => $query->where('created_at', '<=', $to))
             ->count();
 
+        $registeredUsers = User::withTrashed()
+            ->whereBetween('created_at', [$from, $to])
+            ->withCount(['cars' => fn (Builder $query): Builder => $query->where('created_at', '<=', $to)])
+            ->orderByDesc('created_at')
+            ->get(['id', 'name', 'email', 'created_at'])
+            ->map(fn (User $user): array => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'created_at' => $user->created_at?->toIso8601String(),
+                'has_car' => $user->cars_count > 0,
+            ])
+            ->values()
+            ->all();
+
         return [
             'overview' => [
                 'page_views' => (clone $pageViews)->count(),
@@ -43,6 +59,7 @@ class AnalyticsReport
                 'registrations' => $registrations,
                 'activation_rate' => $registrations === 0 ? 0.0 : round(($activatedUsers / $registrations) * 100, 1),
             ],
+            'registered_users' => $registeredUsers,
             'product' => [
                 'cars_added' => Car::whereBetween('created_at', [$from, $to])->count(),
                 'oil_changes' => OilChange::whereBetween('created_at', [$from, $to])->count(),
