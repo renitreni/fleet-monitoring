@@ -85,6 +85,7 @@ Access the application at **http://localhost:8080**
 | `BLOG_AI_POSTS_PER_DAY` | No | Daily generation quota (default: `10`) |
 | `BLOG_AI_GENERATION_TIME` | No | Daily generation time in the blog timezone (default: `06:00`) |
 | `BLOG_AI_FIRST_PUBLISH_TIME` | No | First publication slot (default: `08:00`) |
+| `BLOG_AI_NOTIFICATION_EMAIL` | No | Recipient for scheduled AI generation success and failure emails |
 | `BLOG_TIMEZONE` | No | Blog schedule timezone (default: `Asia/Manila`) |
 | `BLOG_AI_BYLINE` | No | Public byline for generated articles |
 | `GOOGLE_CLIENT_ID` | For Google auth | OAuth client ID |

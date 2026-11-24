@@ -11,6 +11,7 @@ return [
         'posts_per_day' => env('BLOG_AI_POSTS_PER_DAY', 10),
         'generation_time' => env('BLOG_AI_GENERATION_TIME', '06:00'),
         'first_publish_time' => env('BLOG_AI_FIRST_PUBLISH_TIME', '08:00'),
+        'notification_email' => env('BLOG_AI_NOTIFICATION_EMAIL'),
         'byline' => env('BLOG_AI_BYLINE', 'Motologic Editorial Team'),
     ],
 ];

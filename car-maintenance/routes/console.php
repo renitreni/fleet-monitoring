@@ -1,6 +1,9 @@
 <?php
 
+use Illuminate\Console\Scheduling\Event;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schedule;
+use Illuminate\Support\Stringable;
 
 Schedule::command('oil-changes:check')->dailyAt('08:00');
 
@@ -12,7 +15,20 @@ Schedule::command('blog:generate-ai')
     ->dailyAt(config('blog.ai.generation_time'))
     ->timezone(config('blog.timezone'))
     ->withoutOverlapping(180)
-    ->onOneServer();
+    ->onOneServer()
+    ->thenWithOutput(function (Event $event, Stringable $output): void {
+        $recipient = config('blog.ai.notification_email');
+
+        if (! $recipient) {
+            return;
+        }
+
+        $status = $event->exitCode === 0 ? 'succeeded' : 'failed';
+
+        Mail::raw("AI blog generation {$status}.\n\n{$output}", function ($message) use ($recipient, $status): void {
+            $message->to($recipient)->subject("AI blog generation {$status}");
+        });
+    });
 
 Schedule::command('blog:prune-views')->dailyAt('03:10')->timezone(config('blog.timezone'))->withoutOverlapping();
 
