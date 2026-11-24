@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { Link, router, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import RoutePreview from '@/Components/RoutePreview';
 import { formatTime } from '@/lib/routePreview';
 
-export default function Marketplace({ routes, filters, catalogUrl }) {
+const DESCRIPTION = 'Browse public driving routes on Motologic. Explore the course, join anytime, and chase your next personal best.';
+
+export default function Marketplace({ routes, filters, catalogUrl, canonicalUrl }) {
     const user = usePage().props.auth.user;
     const [search, setSearch] = useState(filters.search);
     const [busy, setBusy] = useState(null);
@@ -43,6 +45,16 @@ export default function Marketplace({ routes, filters, catalogUrl }) {
                 </div>
             }
         >
+            <Head>
+                <meta name="description" content={DESCRIPTION} />
+                {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
+                {filters.search && <meta name="robots" content="noindex,follow" />}
+                <meta property="og:type" content="website" />
+                {canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
+                <meta property="og:title" content="Browse routes — Motologic" />
+                <meta property="og:description" content={DESCRIPTION} />
+            </Head>
+
             <div className="mx-auto max-w-[1384px] space-y-8 px-5 py-8 sm:px-8">
                 <div className="flex flex-wrap items-center justify-between gap-5">
                     <div className="flex gap-1 border border-[var(--border)] p-1">

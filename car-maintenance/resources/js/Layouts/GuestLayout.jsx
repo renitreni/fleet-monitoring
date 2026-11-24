@@ -5,7 +5,9 @@ import ThemeToggle from '@/Components/ThemeToggle';
 export default function GuestLayout({ title, children }) {
     return (
         <div className="editorial-shell relative min-h-screen overflow-hidden bg-[var(--background)] text-[var(--text)] selection:bg-[var(--accent)] selection:text-white">
-            <Head title={title} />
+            <Head title={title}>
+                <meta name="robots" content="noindex,follow" />
+            </Head>
             <div className="motologic-grid pointer-events-none absolute inset-0 opacity-30" />
             <div className="pointer-events-none absolute -right-36 -top-36 h-[32rem] w-[32rem] rounded-full bg-[#ee2b24]/10 blur-[120px]" />
 

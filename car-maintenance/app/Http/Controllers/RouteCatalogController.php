@@ -8,6 +8,7 @@ use App\Services\TripStandings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Inertia\Response;
 
 class RouteCatalogController extends Controller
@@ -48,6 +49,7 @@ class RouteCatalogController extends Controller
             ]),
             'filters' => ['search' => $filters['search'] ?? '', 'sort' => $sort, 'filter' => $filter],
             'catalogUrl' => route('routes.index'),
+            'canonicalUrl' => route('routes.index'),
         ]);
     }
 
@@ -59,17 +61,20 @@ class RouteCatalogController extends Controller
         if (! $request->user()) {
             $request->session()->put('url.intended', route('routes.show', $trip));
         }
+        $distanceKm = round($trip->distance_m / 1000, 1);
 
         return inertia('Trips/Route', [
             'trip' => [
                 'name' => $trip->name, 'description' => $trip->description,
                 'route_points' => $trip->route_points, 'checkpoints' => $trip->checkpoints,
-                'distance_km' => round($trip->distance_m / 1000, 1), 'open' => $trip->isOpen(),
+                'distance_km' => $distanceKm, 'open' => $trip->isOpen(),
                 'creator' => $trip->user?->name, 'participants_count' => $trip->participants()->whereNull('left_at')->count(),
             ],
             'standings' => $standings->times($trip), 'joined' => $participant !== null,
             'joinUrl' => route('routes.join', $trip), 'attemptUrl' => route('trips.show', $trip),
             'personalBest' => $participant?->attempts()->where('status', 'completed')->min('elapsed_ms'),
+            'canonicalUrl' => route('routes.show', $trip),
+            'metaDescription' => Str::limit(trim((string) $trip->description), 155) ?: "Join {$trip->name} on Motologic — a {$distanceKm} km route with verified timing. Track your personal best.",
         ]);
     }
 

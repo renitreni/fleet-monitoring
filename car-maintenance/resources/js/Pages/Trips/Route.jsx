@@ -1,11 +1,11 @@
-import { Link, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import TripMap from '@/Components/TripMap';
 import RouteLeaderboard from '@/Components/RouteLeaderboard';
 import Button from '@/Components/Button';
 import { formatTime } from '@/lib/routePreview';
 
-export default function Route({ trip, standings, joined, joinUrl, attemptUrl, personalBest }) {
+export default function Route({ trip, standings, joined, joinUrl, attemptUrl, personalBest, canonicalUrl, metaDescription }) {
     const user = usePage().props.auth.user;
     const form = useForm({ public_consent: false });
     return (
@@ -23,6 +23,15 @@ export default function Route({ trip, standings, joined, joinUrl, attemptUrl, pe
                 </div>
             }
         >
+            <Head>
+                {metaDescription && <meta name="description" content={metaDescription} />}
+                {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
+                <meta property="og:type" content="website" />
+                {canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
+                <meta property="og:title" content={trip.name} />
+                {metaDescription && <meta property="og:description" content={metaDescription} />}
+            </Head>
+
             <div className="mx-auto max-w-[1384px] space-y-8 px-5 py-8 sm:px-8">
                 <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
                     <TripMap
