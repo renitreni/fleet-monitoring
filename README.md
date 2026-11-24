@@ -78,6 +78,15 @@ Access the application at **http://localhost:8080**
 | `OPENROUTER_MODEL` | No | Model slug (default: `openai/gpt-3.5-turbo`) |
 | `OPENROUTER_BASE_URL` | No | OpenRouter API base URL |
 | `OPENROUTER_TIMEOUT` | No | Request timeout in seconds (default: `30`) |
+| `NVIDIA_API_KEY` | For AI blogs | NVIDIA NIM API key; never commit the populated value |
+| `NVIDIA_MODEL` | No | NVIDIA model (default: `nvidia/nemotron-3.5-super-vl-120b-a12b`) |
+| `NVIDIA_BASE_URL` | No | NVIDIA OpenAI-compatible base URL |
+| `NVIDIA_TIMEOUT` | No | NVIDIA response timeout in seconds (default: `180`) |
+| `BLOG_AI_POSTS_PER_DAY` | No | Daily generation quota (default: `10`) |
+| `BLOG_AI_GENERATION_TIME` | No | Daily generation time in the blog timezone (default: `06:00`) |
+| `BLOG_AI_FIRST_PUBLISH_TIME` | No | First publication slot (default: `08:00`) |
+| `BLOG_TIMEZONE` | No | Blog schedule timezone (default: `Asia/Manila`) |
+| `BLOG_AI_BYLINE` | No | Public byline for generated articles |
 | `GOOGLE_CLIENT_ID` | For Google auth | OAuth client ID |
 | `GOOGLE_CLIENT_SECRET` | For Google auth | OAuth client secret |
 | `GOOGLE_REDIRECT_URI` | For Google auth | Must match the redirect URI in Google Cloud Console |
@@ -165,26 +174,62 @@ docker-compose exec node npm run lint:fix
 docker-compose exec node npm run format
 ```
 
+## NVIDIA AI Blog Automation
+
+The scheduler runs `blog:generate-ai` every day at **06:00 Asia/Manila**. It generates up to 10 original automotive articles, stores them as scheduled posts with the `nvidia` source, and assigns publication slots from **08:00 through 17:00**. The existing `blog:publish-scheduled` task publishes due posts every minute.
+
+At least one existing account must have blog administrator access because generated posts require an author. The public byline defaults to **Motologic Editorial Team**. API errors do not create incomplete posts; rerunning the command fills only the remaining daily quota. Posts already generated that day are counted even after publication.
+
+1. Add `NVIDIA_API_KEY` and any optional overrides from `.env.example` to `car-maintenance/.env`.
+2. Grant an existing account blog access if none exists:
+   ```bash
+   docker-compose exec app php artisan blog:admin owner@example.com
+   ```
+3. Generate one smoke-test article, publish due posts, and inspect the blog:
+   ```bash
+   docker-compose exec app php artisan blog:generate-ai --count=1
+   docker-compose exec app php artisan blog:publish-scheduled
+   ```
+4. Run `blog:generate-ai` without `--count` to fill the rest of the current day's quota. Repeating it after 10 posts makes no further API calls.
+
+Run the integration tests with fake HTTP responses (no API charges):
+```bash
+docker-compose exec app php artisan test --compact tests/Feature/NvidiaBlogGeneratorTest.php tests/Feature/GenerateAiBlogPostsTest.php
+```
+
 ## Scheduled Tasks
 
-The scheduler container runs `php artisan schedule:work`, which dispatches daily oil change checks at **08:00**.
+The scheduler container runs `php artisan schedule:work`, which dispatches daily oil change checks at **08:00** and the blog tasks described above.
 
-To run manually:
+To run the oil-change check manually:
 ```bash
 docker-compose exec app php artisan oil-changes:check
 ```
 
 ## Production Deployment
 
-Production server: `ssh root@187.53.134.76` (app lives at `/opt/fleet-monitoring`, site is https://motologic.tech)
+Production server: `ssh root@187.53.134.76` (app lives at `/opt/fleet-monitoring`, site is https://motologic.tech). Keep the real NVIDIA key only in the server's `car-maintenance/.env`; do not paste it into tracked files or shell history.
 
 ```bash
-# Use production compose file
-docker-compose -f docker-compose.prod.yml up -d --build
+ssh root@187.53.134.76
+cd /opt/fleet-monitoring
 
-# Run optimizations
+# Deploy the release containing the AI generator.
+git pull origin main
+
+# Set NVIDIA_API_KEY in car-maintenance/.env before rebuilding.
+# Rebuild every PHP runtime so app, scheduler, and queue use the same release.
+docker-compose -f docker-compose.prod.yml up -d --build app scheduler queue
 docker-compose -f docker-compose.prod.yml exec app php artisan optimize
+docker-compose -f docker-compose.prod.yml exec app php artisan schedule:list
+
+# Verify with one real generation, then let the scheduler publish due posts.
+docker-compose -f docker-compose.prod.yml exec app php artisan blog:generate-ai --count=1
+docker-compose -f docker-compose.prod.yml exec app php artisan blog:publish-scheduled
+docker-compose -f docker-compose.prod.yml logs --tail=100 scheduler
 ```
+
+Confirm the generated article appears under https://motologic.tech/blog. If generation fails, check `storage/logs/laravel.log`, correct the configuration, and rerun the command; successful posts are not duplicated.
 
 ## CI/CD
 
