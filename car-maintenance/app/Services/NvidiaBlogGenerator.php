@@ -2,9 +2,12 @@
 
 namespace App\Services;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Sleep;
+use Illuminate\Support\Str;
 use JsonException;
 use RuntimeException;
 
@@ -24,22 +27,64 @@ class NvidiaBlogGenerator
             throw new RuntimeException('NVIDIA API key is not configured. Set NVIDIA_API_KEY.');
         }
 
-        $response = $this->requestArticle($apiKey, $excludedTitles);
+        $attempts = max(1, (int) config('blog.ai.attempts'));
+        $failures = [];
+
+        for ($attempt = 1; $attempt <= $attempts; $attempt++) {
+            try {
+                return $this->attemptGeneration($apiKey, $excludedTitles);
+            } catch (RuntimeException $exception) {
+                $failures[] = "attempt {$attempt}: {$exception->getMessage()}";
+
+                if ($attempt < $attempts) {
+                    Sleep::for((int) config('blog.ai.retry_delay'))->seconds();
+                }
+            }
+        }
+
+        throw new RuntimeException(
+            "NVIDIA article generation failed after {$attempts} attempt(s). ".implode(' | ', $failures),
+            previous: $exception,
+        );
+    }
+
+    /**
+     * @param  array<int, string>  $excludedTitles
+     * @return array{title: string, excerpt: string, body_markdown: string, seo_title: string, meta_description: string, tags: array<int, string>}
+     */
+    private function attemptGeneration(string $apiKey, array $excludedTitles): array
+    {
+        try {
+            $response = $this->requestArticle($apiKey, $excludedTitles);
+        } catch (ConnectionException $exception) {
+            throw new RuntimeException("NVIDIA API connection failed: {$exception->getMessage()}", previous: $exception);
+        }
 
         if (! $response->successful()) {
-            throw new RuntimeException("NVIDIA API request failed with status {$response->status()}.");
+            $body = Str::limit(trim($response->body()), 300);
+
+            throw new RuntimeException("NVIDIA API request failed with status {$response->status()}: {$body}");
         }
 
         $content = Arr::get($response->json(), 'choices.0.message.content');
 
         if (! is_string($content) || trim($content) === '') {
-            throw new RuntimeException('NVIDIA API returned an empty article.');
+            $finishReason = Arr::get($response->json(), 'choices.0.finish_reason', 'unknown');
+            $completionTokens = Arr::get($response->json(), 'usage.completion_tokens', 'unknown');
+            $hadReasoning = filled(Arr::get($response->json(), 'choices.0.message.reasoning_content')) || filled(Arr::get($response->json(), 'choices.0.message.reasoning'));
+
+            throw new RuntimeException(sprintf(
+                'NVIDIA API returned an empty article (finish_reason: %s, completion_tokens: %s, reasoning returned: %s).',
+                is_scalar($finishReason) ? $finishReason : 'unknown',
+                is_scalar($completionTokens) ? $completionTokens : 'unknown',
+                $hadReasoning ? 'yes' : 'no',
+            ));
         }
 
         try {
             $article = json_decode($content, true, 512, JSON_THROW_ON_ERROR);
         } catch (JsonException $exception) {
-            throw new RuntimeException('NVIDIA API returned invalid JSON.', previous: $exception);
+            throw new RuntimeException('NVIDIA API returned invalid JSON: '.Str::limit($exception->getMessage(), 100), previous: $exception);
         }
 
         if (! is_array($article)) {

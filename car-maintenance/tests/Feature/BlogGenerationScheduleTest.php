@@ -44,6 +44,17 @@ class BlogGenerationScheduleTest extends TestCase
         Event::assertNotDispatched(MessageSent::class);
     }
 
+    public function test_generation_is_retried_hourly_for_two_hours(): void
+    {
+        $times = collect(app(Schedule::class)->events())
+            ->filter(fn ($event): bool => str_contains($event->command ?? '', 'blog:generate-ai'))
+            ->map(fn ($event): string => $event->expression)
+            ->values()
+            ->all();
+
+        $this->assertSame(['0 6 * * *', '0 7 * * *', '0 8 * * *'], $times);
+    }
+
     private function runScheduledGeneration(int $exitCode): void
     {
         $event = collect(app(Schedule::class)->events())

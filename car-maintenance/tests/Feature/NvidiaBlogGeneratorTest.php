@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Services\NvidiaBlogGenerator;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Sleep;
 use RuntimeException;
 use Tests\TestCase;
 
@@ -42,19 +43,60 @@ class NvidiaBlogGeneratorTest extends TestCase
     public function test_rejects_an_api_error_response(): void
     {
         Http::preventStrayRequests();
+        Sleep::fake();
         config(['blog.ai.api_key' => 'test-nvidia-key']);
         Http::fake([
             'integrate.api.nvidia.com/v1/chat/completions' => Http::response(['error' => 'Unavailable'], 503),
         ]);
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('NVIDIA API request failed with status 503.');
+        $this->expectExceptionMessage('NVIDIA API request failed with status 503');
 
         app(NvidiaBlogGenerator::class)->generate();
+    }
+
+    public function test_retries_an_empty_article_and_succeeds(): void
+    {
+        Http::preventStrayRequests();
+        Sleep::fake();
+        config(['blog.ai.api_key' => 'test-nvidia-key', 'blog.ai.attempts' => 3]);
+        Http::fake([
+            'integrate.api.nvidia.com/v1/chat/completions' => Http::sequence()
+                ->push(['choices' => [['message' => ['content' => ''], 'finish_reason' => 'length']]])
+                ->push(['choices' => [['message' => ['content' => json_encode($this->validArticle())]]]]),
+        ]);
+
+        $article = app(NvidiaBlogGenerator::class)->generate();
+
+        $this->assertSame($this->validArticle(), $article);
+        Http::assertSentCount(2);
+        Sleep::assertSleptTimes(1);
+    }
+
+    public function test_reports_the_cause_when_every_attempt_returns_an_empty_article(): void
+    {
+        Http::preventStrayRequests();
+        Sleep::fake();
+        config(['blog.ai.api_key' => 'test-nvidia-key', 'blog.ai.attempts' => 2]);
+        Http::fake([
+            'integrate.api.nvidia.com/v1/chat/completions' => Http::response([
+                'choices' => [['message' => ['content' => null], 'finish_reason' => 'length']],
+                'usage' => ['completion_tokens' => 16384],
+            ]),
+        ]);
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('failed after 2 attempt(s). attempt 1: NVIDIA API returned an empty article (finish_reason: length, completion_tokens: 16384');
+
+        try {
+            app(NvidiaBlogGenerator::class)->generate();
+        } finally {
+            Http::assertSentCount(2);
+        }
     }
 
     public function test_rejects_invalid_article_json(): void
     {
         Http::preventStrayRequests();
+        Sleep::fake();
         config(['blog.ai.api_key' => 'test-nvidia-key']);
         Http::fake([
             'integrate.api.nvidia.com/v1/chat/completions' => Http::response([
@@ -64,7 +106,7 @@ class NvidiaBlogGeneratorTest extends TestCase
             ]),
         ]);
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('NVIDIA API returned invalid JSON.');
+        $this->expectExceptionMessage('NVIDIA API returned invalid JSON');
 
         app(NvidiaBlogGenerator::class)->generate();
     }

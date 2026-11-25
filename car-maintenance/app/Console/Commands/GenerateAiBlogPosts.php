@@ -32,7 +32,7 @@ class GenerateAiBlogPosts extends Command
 
         $dailyQuota = (int) config('blog.ai.posts_per_day');
         $createdToday = $this->createdToday();
-        $remainingQuota = max(0, $dailyQuota - $createdToday);
+        $remainingQuota = $this->remainingQuota();
 
         if ($remainingQuota === 0) {
             $this->info("Daily AI blog quota already reached ({$dailyQuota}).");
@@ -74,6 +74,11 @@ class GenerateAiBlogPosts extends Command
         $this->info("Created {$created} AI blog post(s).");
 
         return self::SUCCESS;
+    }
+
+    public function remainingQuota(): int
+    {
+        return max(0, (int) config('blog.ai.posts_per_day') - $this->createdToday());
     }
 
     private function createdToday(): int

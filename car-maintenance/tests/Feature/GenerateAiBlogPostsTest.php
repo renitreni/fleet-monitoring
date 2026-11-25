@@ -6,6 +6,7 @@ use App\Models\BlogPost;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Sleep;
 use Tests\TestCase;
 
 class GenerateAiBlogPostsTest extends TestCase
@@ -79,7 +80,8 @@ class GenerateAiBlogPostsTest extends TestCase
     {
         $this->travelTo('2026-11-24 00:00:00');
         Http::preventStrayRequests();
-        config(['blog.ai.api_key' => 'test-nvidia-key']);
+        Sleep::fake();
+        config(['blog.ai.api_key' => 'test-nvidia-key', 'blog.ai.attempts' => 1]);
         User::factory()->create(['is_blog_admin' => true]);
         Http::fake([
             'integrate.api.nvidia.com/v1/chat/completions' => Http::sequence()
@@ -88,7 +90,7 @@ class GenerateAiBlogPostsTest extends TestCase
         ]);
 
         $this->artisan('blog:generate-ai --count=1')
-            ->expectsOutput('NVIDIA API request failed with status 503.')
+            ->expectsOutputToContain('failed after 1 attempt(s). attempt 1: NVIDIA API request failed with status 503')
             ->assertFailed();
         $this->assertSame(0, BlogPost::count());
 
